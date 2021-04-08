@@ -16,10 +16,14 @@ def _cat(arrays: Iterable[np.ndarray]) -> Optional[np.ndarray]:
 class _Context(object):
     vertices: List[np.ndarray] = []
     texture_coordinates: List[np.ndarray] = []
+    vertex_normals: List[np.ndarray] = []
+    faces: List[np.ndarray] = []
 
     def __str__(self):
         return "vertices: %s\n" % self.vertices \
-               + "texture_coordinates: %s\n" % self.texture_coordinates
+               + "texture_coordinates: %s\n" % self.texture_coordinates \
+               + "vertex_normals: %s\n" % self.vertex_normals \
+               + "faces: %s\n" % self.faces
 
 
 class _Handler(object):
@@ -27,18 +31,23 @@ class _Handler(object):
     def key():
         raise NotImplementedError
 
-    def __call__(self, context: _Context, line: str):
+    def __call__(self, context: _Context, line: str) -> None:
         raise NotImplementedError
 
 
 class Parser(object):
-    _handler_dict: Dict[str, _Handler] = None
+    _handler_dict: Dict[str, _Handler] = {}
 
     def __init__(self):
-        self._handler_dict = {}
         self._context = _Context()
-        for cls in _Handler.__subclasses__():
-            self._handler_dict[cls.key()] = cls()
+        self.register_all_subclasses(_Handler)
+
+    def register_all_subclasses(self, sup_cls: Type[_Handler]):
+        for cls in sup_cls.__subclasses__():
+            if len(cls.__subclasses__()) != 0:
+                self.register_all_subclasses(cls)
+            else:
+                self._handler_dict[cls.key()] = cls()
 
     def parse_text(self, content: str):
         for line in content.splitlines():
@@ -60,22 +69,47 @@ class Parser(object):
     def dump(self):
         return {
             "v": _cat(self._context.vertices),
-            "vt": _cat(self._context.texture_coordinates)
+            "vt": _cat(self._context.texture_coordinates),
+            "vn": _cat(self._context.vertex_normals),
+            "f": _cat(self._context.faces),
         }
 
 
-class _VertexHandler(_Handler):
+class _FixedLengthVectorHandler(_Handler):
+    @staticmethod
+    def length() -> int:
+        raise NotImplementedError
+
+    @staticmethod
+    def dump(context: _Context, vector):
+        raise NotImplementedError
+
+    @staticmethod
+    def key():
+        raise NotImplementedError
+
+    def __call__(self, context: _Context, line: str) -> None:
+        splits = line.split()
+        assert splits[0] == self.key()
+        assert len(splits) == self.length() + 1
+        vector = np.zeros(self.length(), dtype=_DATA_TYPE)
+        for i in range(self.length()):
+            vector[i] = float(splits[i + 1])
+        self.dump(context, vector)
+
+
+class _VertexHandler(_FixedLengthVectorHandler):
+    @staticmethod
+    def length() -> int:
+        return 3
+
+    @staticmethod
+    def dump(context: _Context, vector):
+        context.vertices.append(vector)
+
     @staticmethod
     def key():
         return "v"
-
-    def __call__(self, context: _Context, line: str):
-        splits = line.split()
-        assert splits[0] == self.key()
-        vertex = np.zeros(3, dtype=_DATA_TYPE)
-        for i in range(3):
-            vertex[i] = float(splits[i + 1])
-        context.vertices.append(vertex)
 
 
 class _VertexTextureHandler(_Handler):
@@ -93,8 +127,52 @@ class _VertexTextureHandler(_Handler):
         context.texture_coordinates.append(coordinate)
 
 
-if __name__ == '__main__':
-    parser = Parser()
-    text = "v 0 0 1\nvt 1 0 0\ng cube"
-    parser.parse("/home/karl/Projects/EasyRayTracing/test/scenes/cube/cube.obj")
-    print(parser.dump())
+class _VertexNormalHandler(_FixedLengthVectorHandler):
+    @staticmethod
+    def length() -> int:
+        return 3
+
+    @staticmethod
+    def dump(context: _Context, vector):
+        context.vertex_normals.append(vector)
+
+    @staticmethod
+    def key():
+        return "vn"
+
+
+class _FaceHandler(_Handler):
+    @staticmethod
+    def key():
+        return "f"
+
+    def __call__(self, context: _Context, line: str) -> None:
+        splits = line.split()
+        assert splits[0] == self.key()
+        vertex_count = len(splits[1:])
+
+        # TODO: impl. of case of variable number of vertices
+        if vertex_count != 3:
+            raise NotImplementedError
+
+        face = np.zeros((vertex_count, 3), dtype=np.uint32)
+        for i in range(vertex_count):
+            split = splits[i + 1]
+            fields = split.split('/')
+            if len(fields) == 1:
+                indices = [0]
+            elif len(fields) == 2:
+                indices = [0, 1]
+            elif len(fields) == 3:
+                if fields[1] == "":
+                    indices = [0, 2]
+                else:
+                    indices = [0, 1, 2]
+            else:
+                raise ValueError
+            for idx in indices:
+                field = int(fields[idx])
+                assert field > 0
+                face[i, idx] = int(fields[idx])
+
+        context.faces.append(face)
