@@ -16,7 +16,9 @@ include_directories(${Python3_INCLUDE_DIRS})
 include_directories(${Python3_NumPy_INCLUDE_DIRS})
 include_directories(${BLAS_INCLUDE_DIRS})
 
-add_library(rt_impl STATIC interface.c pixel.c ray_tracing.c)
+file(GLOB SOURCE_FILES src/*.c)
+
+add_library(rt_impl STATIC ${SOURCE_FILES})
 target_link_directories(rt_impl PUBLIC ${BLAS_LIBRARY_DIRS})
 target_link_libraries(rt_impl PUBLIC
         ${Python3_LIBRARIES}

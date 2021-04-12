@@ -8,7 +8,8 @@
 #include <stdio.h>
 
 #include "pixel.h"
-#include "ray_tracing.h"
+#include "alg.h"
+#include "ray.h"
 
 static pix_t *at(canvas_t PTRC canvas, size_t x, size_t y) {
     return canvas->data + y * canvas->res_x + x;
@@ -106,6 +107,8 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene) {
             cblas_daxpy(3, 1, ray.direction.d, 1, vec.d, 1);
             cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3,
                         1, rot, 3, vec.d, 1, 0, ray.direction.d, 1);
+
+            print_vec3(&ray.direction, "ray.direction");
         }
     }
     return NULL;

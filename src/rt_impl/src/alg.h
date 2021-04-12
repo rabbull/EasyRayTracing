@@ -2,16 +2,11 @@
 // Created by 榨汁机 on 4/11/2021.
 //
 
-#ifndef RT_IMPL_RAY_TRACING_H
-#define RT_IMPL_RAY_TRACING_H
+#ifndef RT_IMPL_ALG_H
+#define RT_IMPL_ALG_H
 
-#include "common.h"
+#include "utils.h"
 #include "pixel.h"
-
-typedef struct {
-    vec3_t origin;
-    vec3_t direction;
-} ray_t;
 
 typedef struct {
     vec3_t origin;
@@ -40,4 +35,4 @@ typedef struct {
 
 void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene);
 
-#endif //RT_IMPL_RAY_TRACING_H
+#endif //RT_IMPL_ALG_H
