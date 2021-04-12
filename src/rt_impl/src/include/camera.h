@@ -1,9 +1,9 @@
 //
-// Created by 榨汁机 on 4/11/2021.
+// Created by karl on 4/12/21.
 //
 
-#ifndef RT_IMPL_ALG_H
-#define RT_IMPL_ALG_H
+#ifndef RT_IMPL_CAMERA_H
+#define RT_IMPL_CAMERA_H
 
 #include "utils.h"
 #include "pixel.h"
@@ -20,7 +20,7 @@ typedef struct {
     size_t res_y;
     real_t width;
     real_t height;
-    pix_t* data;
+    pix_t *data;
 } canvas_t;
 
 typedef struct {
@@ -29,10 +29,4 @@ typedef struct {
     real_t focal_distance;
 } camera_t;
 
-typedef struct {
-
-} scene_t;
-
-void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene);
-
-#endif //RT_IMPL_ALG_H
+#endif //RT_IMPL_CAMERA_H

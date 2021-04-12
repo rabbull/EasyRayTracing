@@ -7,9 +7,7 @@
 #include <cblas.h>
 #include <stdio.h>
 
-#include "pixel.h"
-#include "alg.h"
-#include "ray.h"
+#include "include/alg.h"
 
 static pix_t *at(canvas_t PTRC canvas, size_t x, size_t y) {
     return canvas->data + y * canvas->res_x + x;
@@ -109,6 +107,10 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene) {
                         1, rot, 3, vec.d, 1, 0, ray.direction.d, 1);
 
             print_vec3(&ray.direction, "ray.direction");
+
+            for (i = 0; i < scene->num_patches; ++i) {
+
+            }
         }
     }
     return NULL;

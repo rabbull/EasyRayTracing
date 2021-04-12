@@ -7,14 +7,14 @@
 
 #include "utils.h"
 #include "ray.h"
+#include "pixel.h"
 
 typedef struct {
     vec3_t vertices[3];
     vec3_t normal;
 } patch_t;
 
-int hit(patch_t PTRC patch, ray_t PTRC ray, vec3_t *hit_point,
-        int *reflected, ray_t *reflection,
-        int *transparent, ray_t *transparency);
+int hit(patch_t PTRC patch, ray_t PTRC ray, vec3_t *hit_point, pix_t *color,
+        int *reflected, ray_t *reflection, int *transparent, ray_t *refraction);
 
 #endif //RT_IMPL_PATCH_H

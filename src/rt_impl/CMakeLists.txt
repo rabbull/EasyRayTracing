@@ -16,7 +16,7 @@ include_directories(${Python3_INCLUDE_DIRS})
 include_directories(${Python3_NumPy_INCLUDE_DIRS})
 include_directories(${BLAS_INCLUDE_DIRS})
 
-file(GLOB SOURCE_FILES src/*.c)
+file(GLOB SOURCE_FILES src/*.c src/include/*.h)
 
 add_library(rt_impl STATIC ${SOURCE_FILES})
 target_link_directories(rt_impl PUBLIC ${BLAS_LIBRARY_DIRS})

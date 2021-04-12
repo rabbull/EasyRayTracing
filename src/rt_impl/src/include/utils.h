@@ -20,6 +20,7 @@ typedef struct {
 #define CPTRC const*const
 
 void print_vec3(vec3_t PTRC vec, char PTRC name);
+
 void print_mat3(mat3_t PTRC mat, char PTRC name);
 
 int eq(real_t p, real_t q);
