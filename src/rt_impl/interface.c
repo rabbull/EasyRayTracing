@@ -8,7 +8,7 @@
 
 static PyObject *SpamError;
 
-PyObject *
+static PyObject *
 rt_impl_system(PyObject *self, PyObject *args);
 
 static PyMethodDef RtImplMethods[] = {

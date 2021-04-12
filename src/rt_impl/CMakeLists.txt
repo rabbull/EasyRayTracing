@@ -4,17 +4,24 @@ project(rt_impl C)
 set(ENV{VIRTUAL_ENV} "../../venv")
 set(Python3_FIND_VIRTUALENV ONLY)
 find_package(Python3 COMPONENTS Interpreter Development NumPy)
-
 if (${Python3_FOUND} AND ${Python3_NumPy_FOUND})
     message(STATUS "- Python3 Found at: ${Python3_EXECUTABLE}")
     message(STATUS "- NumPy Found, Version: ${Python3_NumPy_VERSION}")
 endif ()
 
-find_package(OpenBLAS CONFIG REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(BLAS REQUIRED mkl-dynamic-lp64-seq)
 
-include_directories(${Python3_INCLUDE_DIRS} ${Python3_NumPy_INCLUDE_DIRS})
-add_library(rt_impl interface.c ray_tracing.c)
-target_link_libraries(rt_impl PRIVATE
+include_directories(${Python3_INCLUDE_DIRS})
+include_directories(${Python3_NumPy_INCLUDE_DIRS})
+include_directories(${BLAS_INCLUDE_DIRS})
+
+add_library(rt_impl STATIC interface.c pixel.c ray_tracing.c)
+target_link_directories(rt_impl PUBLIC ${BLAS_LIBRARY_DIRS})
+target_link_libraries(rt_impl PUBLIC
         ${Python3_LIBRARIES}
         ${Python3_NumPy_LIBRARIES}
-        OpenBLAS::OpenBLAS)
+        ${BLAS_LIBRARIES})
+
+add_executable(rt_impl_test main.c)
+target_link_libraries(rt_impl_test rt_impl)
