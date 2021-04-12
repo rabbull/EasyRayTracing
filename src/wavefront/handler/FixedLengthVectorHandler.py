@@ -2,7 +2,6 @@ import numpy as np
 
 from .Context import Context
 from .Handler import Handler
-from .common import _DATA_TYPE
 
 
 class FixedLengthVectorHandler(Handler):
@@ -22,7 +21,7 @@ class FixedLengthVectorHandler(Handler):
         splits = line.split()
         assert splits[0] == self.key()
         assert len(splits) == self.length() + 1
-        vector = np.zeros(self.length(), dtype=_DATA_TYPE)
+        vector = np.zeros(self.length(), dtype=self.data_type())
         for i in range(self.length()):
             vector[i] = float(splits[i + 1])
         self.dump(context, vector)

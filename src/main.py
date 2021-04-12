@@ -1,20 +1,22 @@
 import logging
 
+import numpy as np
+from PIL import Image
+
 from cli import parse_arguments
-from wavefront import Parser
+from camera import Observer, Canvas
 
 
 def main():
     args = parse_arguments()
-    logging.basicConfig(level=10 * (5 - args.verbose))
-    logging.debug("debug")
-    logging.info("info")
-    logging.warning("warning")
-    logging.error("error")
-    logging.fatal("fatal")
-    parser = Parser()
-    parser.parse(args.obj)
-    print(parser.dump())
+
+    # initialize logger
+    logging_level = 10 * (5 - args.verbose)
+    logging.basicConfig(level=logging_level)
+
+    observer = Observer(canvas=Canvas(bg_color=np.array([255, 0, 0, 0])))
+    img: Image = observer.observe()
+    img.show()
 
 
 if __name__ == '__main__':
