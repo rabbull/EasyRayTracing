@@ -14,7 +14,8 @@ typedef struct {
     vec3_t normal;
 } patch_t;
 
-int hit(patch_t PTRC patch, ray_t PTRC ray, vec3_t *hit_point, pix_t *color,
-        int *reflected, ray_t *reflection, int *transparent, ray_t *refraction);
+static real_t const OFF_TARGET = -1;
+
+bool_t hit(patch_t *patch, ray_t PTRC ray, real_t *dist, vec3_t *hit_point);
 
 #endif //RT_IMPL_PATCH_H

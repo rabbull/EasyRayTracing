@@ -1,2 +1,5 @@
+# Python distutils Default Build Directory
 build/
+
+# CLion Default Build Directory
 cmake-build-debug/

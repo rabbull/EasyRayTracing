@@ -7,7 +7,7 @@
 
 #include "include/utils.h"
 
-static const real_t EPS = 1e-3;
+static const real_t EPS = 1e-6;
 
 void print_vec3(vec3_t CPTRC vec, char CPTRC name) {
     int i;
@@ -39,6 +39,6 @@ void print_mat3(mat3_t CPTRC mat, char CPTRC name) {
     printf("]\n");
 }
 
-int eq(real_t p, real_t q) {
+bool_t eq(real_t p, real_t q) {
     return fabs(p - q) < EPS;
 }

@@ -70,6 +70,11 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene) {
     ray_t ray;
     vec3_t vec;
 
+    bool_t flag;
+    real_t dist;
+    vec3_t hit_point;
+    patch_t *curr_patch;
+
     real_t alpha = camera->observer.orientation.d[0];
     real_t beta = camera->observer.orientation.d[1];
     real_t gamma = camera->observer.orientation.d[2];
@@ -108,8 +113,9 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTRC scene) {
 
             print_vec3(&ray.direction, "ray.direction");
 
+            curr_patch = scene->patches;
             for (i = 0; i < scene->num_patches; ++i) {
-
+                flag = hit(curr_patch, &ray, &dist, &vec);
             }
         }
     }
