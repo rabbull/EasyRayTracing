@@ -14,6 +14,10 @@ typedef struct {
     patch_t *patches;
 } scene_t;
 
-void combine(size_t n, scene_t* scene, ...);
+void combine(size_t n, scene_t *scene, ...);
+
+bool_t color(pix_t *pix, ray_t *ray, scene_t *scene);
+
+void print_scene(scene_t PTRC scene, char PTRC name, char PTRC prefix);
 
 #endif //RT_IMPL_SCENE_H

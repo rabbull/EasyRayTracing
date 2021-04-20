@@ -29,15 +29,17 @@ class Parser(object):
 
     def parse_text(self, content: str):
         for line in content.splitlines():
-            self.handle(line)
+            self._handle(line)
 
     def parse(self, path: str):
         file = open(path, "r")
         for line in file.readlines():
-            self.handle(line)
+            self._handle(line)
         file.close()
 
-    def handle(self, line: str):
+    def _handle(self, line: str):
+        if len(line.strip()) == 0 or line[0] == '#':
+            return
         key = line.split(maxsplit=2)[0]
         if key in self._handler_dict.keys():
             self._handler_dict.get(key)(self._context, line)
@@ -45,9 +47,20 @@ class Parser(object):
             print("Unknown Tag in Line:", line, file=sys.stderr)
 
     def dump(self):
-        return {
+        raw = {
             "v": _cat(self._context.vertices),
             "vt": _cat(self._context.texture_coordinates),
             "vn": _cat(self._context.vertex_normals),
             "f": _cat(self._context.faces),
+        }
+        indices = raw["f"][:, :, 0] - 1
+        faces = raw["v"][indices]
+        normals = np.cross(faces[:, 2] - faces[:, 0], faces[:, 1] - faces[:, 0])
+        normals /= np.linalg.norm(normals, axis=1)[:, np.newaxis]
+        return {
+            "raw": raw,
+            "aggregated": {
+                "faces": faces,
+                "normals": normals,
+            }
         }

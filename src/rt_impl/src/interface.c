@@ -8,19 +8,24 @@
 #include <numpy/ndarrayobject.h>
 
 #include "include/patch.h"
-
+#include "include/scene.h"
+#include "include/alg.h"
 
 static PyObject *SpamError;
 
 static PyObject *
-rt_impl_system(PyObject *self, PyObject *args);
-
-static PyObject *
 rt_impl_hit(PyObject *self, PyObject *args);
 
+static PyObject *
+rt_impl_color(PyObject *self, PyObject *args);
+
+static PyObject *
+rt_impl_observe(PyObject *self, PyObject *args);
+
 static PyMethodDef RtImplMethods[] = {
-        {"system", rt_impl_system, METH_VARARGS, "Execute a shell command."},
-        {"hit",    rt_impl_hit,    METH_VARARGS, "shit"},
+        {"hit",     rt_impl_hit,     METH_VARARGS, "hit"},
+        {"color",   rt_impl_color,   METH_VARARGS, "color"},
+        {"observe", rt_impl_observe, METH_VARARGS, "observe"},
         {NULL, NULL, 0, NULL}
 };
 
@@ -33,25 +38,8 @@ static struct PyModuleDef rt_impl_module = {
 };
 
 static PyObject *
-rt_impl_system(PyObject *self, PyObject *args) {
-    char const *cmd;
-    int sts;
-
-    if (!PyArg_ParseTuple(args, "s", &cmd)) {
-        return NULL;
-    }
-    sts = system(cmd);
-    if (sts < 0) {
-        PyErr_SetString(SpamError, "System command failed");
-        return NULL;
-    }
-    return PyLong_FromLong(sts);
-}
-
-static PyObject *
 rt_impl_hit(PyObject *self, PyObject *args) {
     PyObject *patch, *ray;
-    npy_intp *dims;
     real_t distance;
 
     if (!PyArg_ParseTuple(args, "OO", &patch, &ray)) {
@@ -66,6 +54,77 @@ rt_impl_hit(PyObject *self, PyObject *args) {
 
     bool_t flag = hit(PyArray_DATA(patch), PyArray_DATA(ray), &distance, NULL);
     return Py_BuildValue("(if)", flag, distance);
+}
+
+static PyObject *
+rt_impl_color(PyObject *self, PyObject *args) {
+    PyObject *pix_obj, *patches_obj, *ray_obj;
+    scene_t scene;
+
+    ray_t *ray;
+    pix_t *pix;
+    bool_t flag;
+
+    if (!PyArg_ParseTuple(args, "OOO", &pix_obj, &patches_obj, &ray_obj)) {
+        return NULL;
+    }
+
+    scene.num_patches = PyArray_DIMS(patches_obj)[0];
+    scene.patches = PyArray_DATA(patches_obj);
+    ray = PyArray_DATA(ray_obj);
+    pix = PyArray_DATA(pix_obj);
+
+    flag = color(pix, ray, &scene);
+    return PyLong_FromLong(flag);
+}
+
+static PyObject *
+rt_impl_observe(PyObject *self, PyObject *args) {
+    size_t i;
+    PyObject *scene_obj;
+    PyObject *camera_obj;
+    PyObject *observer_obj;
+    PyObject *canvas_obj;
+    PyObject *origin_obj;
+    PyObject *orient_obj;
+    PyObject *patches_obj;
+    scene_t scene;
+    camera_t camera;
+    real_t *p;
+
+    if (!PyArg_ParseTuple(args, "OO", &camera_obj, &scene_obj)) {
+        return NULL;
+    }
+    patches_obj = PyObject_GetAttrString(scene_obj, "_data");
+    scene.num_patches = PyArray_DIM(patches_obj, 0);
+    scene.patches = PyArray_DATA(patches_obj);
+
+    canvas_obj = PyObject_GetAttrString(camera_obj, "_canvas");
+    observer_obj = PyObject_GetAttrString(camera_obj, "_observer");
+    origin_obj = PyObject_GetAttrString(observer_obj, "_origin");
+    orient_obj = PyObject_GetAttrString(observer_obj, "_orient");
+    for (i = 0; i < 3; ++i) {
+        p = PyArray_GETPTR1(origin_obj, i);
+        camera.observer.origin.d[i] = *p;
+        p = PyArray_GETPTR1(orient_obj, i);
+        camera.observer.orientation.d[i] = *p;
+    }
+    camera.canvas.res_x = PyLong_AsLong(
+            PyObject_GetAttrString(canvas_obj, "_res_x"));
+    camera.canvas.res_y = PyLong_AsLong(
+            PyObject_GetAttrString(canvas_obj, "_res_y"));
+    camera.canvas.width = PyFloat_AsDouble(
+            PyObject_GetAttrString(canvas_obj, "_width"));
+    camera.canvas.height = PyFloat_AsDouble(
+            PyObject_GetAttrString(canvas_obj, "_height"));
+    camera.canvas.data = PyArray_DATA(
+            PyObject_GetAttrString(canvas_obj, "_data"));
+
+    camera.focal_length = PyFloat_AsDouble(
+            PyObject_GetAttrString(camera_obj, "_focal_length"));
+
+    rt_impl(&camera, &scene);
+    Py_RETURN_NONE;
 }
 
 PyMODINIT_FUNC

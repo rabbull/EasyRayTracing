@@ -9,36 +9,26 @@
 
 static const real_t EPS = 1e-6;
 
-void print_vec3(vec3_t CPTRC vec, char CPTRC name) {
-    int i;
-
-    if (name != NULL) {
-        printf("%s = ", name);
-    }
-    printf("[");
-    for (i = 0; i < 3; ++i) {
-        printf(&", %.1lf"[(i == 0) << 1u], vec->d[i]);
-    }
-    printf("]\n");
-}
-
-void print_mat3(mat3_t CPTRC mat, char CPTRC name) {
-    int i, j;
-
-    if (name != NULL) {
-        printf("%s = ", name);
-    }
-    printf("[\n");
-    for (i = 0; i < 3; ++i) {
-        printf("\t");
-        for (j = 0; j < 3; ++j) {
-            printf(&", %.1lf"[(j == 0) << 1u], mat->r[i].d[j]);
-        }
-        printf("\n");
-    }
-    printf("]\n");
-}
-
 bool_t eq(real_t p, real_t q) {
     return fabs(p - q) < EPS;
+}
+
+real_t real_cos(real_t rad) {
+    if (sizeof(real_t) == sizeof(double)) {
+        return cos(rad);
+    } else {
+        return cosf(rad);
+    }
+}
+
+real_t real_sin(real_t rad) {
+    if (sizeof(real_t) == sizeof(double)) {
+        return sin(rad);
+    } else {
+        return sinf(rad);
+    }
+}
+
+void *ptr_offset(void *ptr, int64_t offset) {
+    return (char *) ptr + offset;
 }

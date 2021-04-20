@@ -14,7 +14,7 @@ class FaceHandler(Handler):
         assert splits[0] == self.key()
         vertex_count = len(splits[1:])
 
-        # TODO: impl. of case of variable number of vertices
+        # TODO: implement cases of variable number of vertices
         if vertex_count != 3:
             raise NotImplementedError
 

@@ -12,8 +12,13 @@ for base, dirs, files in os.walk('src'):
 rt_impl_ext = Extension(
     'rt_impl',
     sources=sources,
-    libraries=['cblas', 'lapacke'],
-    include_dirs=['src/include', numpy.get_include()]
+    libraries=['cblas', 'lapacke', 'gomp', 'pthread'],
+    include_dirs=['src/include', numpy.get_include()],
+    extra_compile_args=['-fopenmp']
 )
 
-setup(name="rt_impl", ext_modules=[rt_impl_ext])
+setup(
+    name="rt_impl",
+    packages=['rt_models'],
+    ext_modules=[rt_impl_ext]
+)

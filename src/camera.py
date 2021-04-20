@@ -3,15 +3,14 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 
-from scene import Scene
+from src.rt_impl.rt_models.scene import Scene
 
 
 class Camera(object):
     _position: np.ndarray = None
     _orient: np.ndarray = None
 
-    def __init__(self,
-                 position: np.ndarray = np.zeros(3),
+    def __init__(self, position: np.ndarray = np.zeros(3),
                  orient: np.ndarray = np.zeros(3)):
         self._position = position
         self._orient = orient

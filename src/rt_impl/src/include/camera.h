@@ -7,6 +7,7 @@
 
 #include "utils.h"
 #include "pixel.h"
+#include "linalg.h"
 
 typedef struct {
     vec3_t origin;
@@ -26,7 +27,7 @@ typedef struct {
 typedef struct {
     observer_t observer;
     canvas_t canvas;
-    real_t focal_distance;
+    real_t focal_length;
 } camera_t;
 
 #endif //RT_IMPL_CAMERA_H

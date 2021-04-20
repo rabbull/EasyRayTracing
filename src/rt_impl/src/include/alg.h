@@ -8,6 +8,6 @@
 #include "camera.h"
 #include "scene.h"
 
-void *rt_impl(camera_t PTRC camera, scene_t PTRC scene);
+void *rt_impl(camera_t PTRC camera, scene_t* scene);
 
 #endif //RT_IMPL_ALG_H

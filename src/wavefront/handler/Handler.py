@@ -6,7 +6,7 @@ from .Context import Context
 class Handler(object):
     @staticmethod
     def data_type() -> np.dtype:
-        return np.float32
+        return np.float64
 
     @staticmethod
     def key():

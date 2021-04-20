@@ -5,7 +5,7 @@
 #ifndef RT_IMPL_RAY_H
 #define RT_IMPL_RAY_H
 
-#include "utils.h"
+#include "linalg.h"
 
 typedef struct {
     vec3_t origin;

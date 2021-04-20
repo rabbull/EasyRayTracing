@@ -5,6 +5,8 @@
 #ifndef RT_IMPL_UTILS_H
 #define RT_IMPL_UTILS_H
 
+#include <stdint.h>
+
 typedef enum {
     FALSE = 0,
     TRUE = 1
@@ -12,25 +14,18 @@ typedef enum {
 
 typedef double real_t;
 
-typedef struct {
-    real_t d[3];
-} vec3_t;
+static const real_t real_inf = 1e100;
 
-typedef struct {
-    vec3_t r[3];
-} mat3_t;
+bool_t eq(real_t p, real_t q);
 
-#define vec_at(vec, index) ((vec).d[index])
-#define mat_at(mat, row, col) ((mat).r[row].d[col])
+real_t real_cos(real_t rad);
+
+real_t real_sin(real_t rad);
+
+void* ptr_offset(void* ptr, int64_t offset);
 
 #define PTRC const*
 #define CPTR *const
 #define CPTRC const*const
-
-void print_vec3(vec3_t PTRC vec, char PTRC name);
-
-void print_mat3(mat3_t PTRC mat, char PTRC name);
-
-bool_t eq(real_t p, real_t q);
 
 #endif //RT_IMPL_UTILS_H

@@ -2,25 +2,24 @@
 // Created by karl on 4/12/21.
 //
 
+#include <math.h>
 #include <stdio.h>
+#include <omp.h>
+#include <cblas.h>
 
-#include "src/include/alg.h"
+#include "src/include/linalg.h"
 
 int main(int argc, char **argv) {
-    patch_t patch = {
-            .normal = {0, 0, 0},
-            .vertices = {{0, 0, 0},
-                         {0, 1, 0},
-                         {0, 0, 1}}
-    };
-    ray_t ray = {
-            .origin = {1, 0.1, 0.1},
-            .direction = {-1, 0, 0}
-    };
+    real_t A[4] = {1, 2, 3, 4};
+    real_t B[8] = {2, 3, 4, 5, 6, 7, 8, 9};
+    real_t res[256] = {0};
 
-    real_t distance = 0;
-    vec3_t hit_point = {0};
-    int flag = hit(&patch, &ray, &distance, &hit_point);
-    printf("%d %lf\n", flag, distance);
-    print_vec3(&hit_point, "hit_point");
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                2, 4, 2,
+                1, A, 2, B, 2,
+                0, res, 4);
+
+    for (int i = 0; i < 256; ++i) {
+        printf("%lf\n", res[i]);
+    }
 }
