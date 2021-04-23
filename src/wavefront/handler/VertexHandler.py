@@ -1,4 +1,4 @@
-from .Context import Context
+from .context import ObjParserContext
 from .FixedLengthVectorHandler import FixedLengthVectorHandler
 
 
@@ -8,7 +8,7 @@ class VertexHandler(FixedLengthVectorHandler):
         return 3
 
     @staticmethod
-    def dump(context: Context, vector):
+    def dump(context: ObjParserContext, vector):
         context.vertices.append(vector)
 
     @staticmethod

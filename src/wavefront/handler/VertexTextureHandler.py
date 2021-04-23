@@ -1,6 +1,6 @@
 import numpy as np
 
-from .Context import Context
+from .context import ObjParserContext
 from .Handler import Handler
 
 
@@ -9,7 +9,7 @@ class VertexTextureHandler(Handler):
     def key():
         return "vt"
 
-    def __call__(self, context: Context, line: str):
+    def __call__(self, context: ObjParserContext, line: str):
         splits = line.split()
         assert splits[0] == self.key()
         assert 3 <= len(splits) <= 4

@@ -1,9 +1,11 @@
+import os
 import sys
 from typing import *
 
 import numpy as np
 
-from .handler import Handler, Context
+from .handler import Handler, ObjParserContext
+from .mtl import MtlRepository
 
 
 def _cat(arrays: Iterable[np.ndarray]) -> Optional[np.ndarray]:
@@ -13,11 +15,13 @@ def _cat(arrays: Iterable[np.ndarray]) -> Optional[np.ndarray]:
     return np.stack(arrays)
 
 
-class Parser(object):
+class WaveFrontObjParser(object):
+    _mtl_repository: MtlRepository = None
     _handler_dict: Dict[str, Handler] = {}
 
-    def __init__(self):
-        self._context = Context()
+    def __init__(self, mtl_search_paths: Optional[Iterable[str]] = None):
+        self._mtl_repository = MtlRepository(mtl_search_paths)
+        self._context = ObjParserContext()
         self.register_all_subclasses(Handler)
 
     def register_all_subclasses(self, sup_cls: Type[Handler]):

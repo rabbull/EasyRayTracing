@@ -1,4 +1,4 @@
-from .Context import Context
+from .context import ObjParserContext
 from .Handler import Handler
 from .FaceHandler import FaceHandler
 from .FixedLengthVectorHandler import FixedLengthVectorHandler

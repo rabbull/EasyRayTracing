@@ -1,12 +1,11 @@
 import logging
-import math
 import time
 
 from rt_models import Camera, Canvas, Observer, Scene
 
 import rt_impl as rt
 from cli import parse_arguments
-from wavefront import Parser
+from wavefront import WaveFrontObjParser
 
 
 def main():
@@ -16,18 +15,27 @@ def main():
     logging_level = 10 * (5 - args.verbose)
     logging.basicConfig(level=logging_level)
 
-    parser = Parser()
+    logging.debug(str(args))
+
+    parser = WaveFrontObjParser()
     parser.parse(args.obj)
     scene = Scene(**parser.dump()['aggregated'])
-    camera = Camera(
-        observer=Observer([0, 0, 10], [0, math.pi / 2, 0]),
-        canvas=Canvas(resolution=(64, 64), size=(2, 2)),
-        f=1
-    )
+
+    observer_origin = [float(e) for e in args.camera_origin.split(',')]
+    observer_orient = [float(e) for e in args.camera_orient.split(',')]
+    assert len(observer_origin) == len(observer_orient) == 3
+    observer = Observer(observer_origin, observer_orient)
+
+    canvas_res = tuple(int(e) for e in args.resolution.split('x'))
+    canvas_size = tuple(float(e) for e in args.canvas_size.split('x'))
+    assert len(canvas_res) == len(canvas_size) == 2
+    canvas = Canvas(resolution=canvas_res, size=canvas_size)
+
+    camera = Camera(observer=observer, canvas=canvas, f=args.focal_length)
     t = time.time()
     rt.observe(camera, scene)
-    print(f"time elapsed: {time.time() - t}s")
-    camera.capture().save("/srv/http/output.png")
+    logging.info(f"time elapsed: {time.time() - t}s")
+    camera.capture().save(args.output)
 
 
 if __name__ == '__main__':

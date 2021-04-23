@@ -1,6 +1,6 @@
 import numpy as np
 
-from .Context import Context
+from .context import ObjParserContext
 
 
 class Handler(object):
@@ -12,5 +12,5 @@ class Handler(object):
     def key():
         raise NotImplementedError
 
-    def __call__(self, context: Context, line: str) -> None:
+    def __call__(self, context: ObjParserContext, line: str) -> None:
         raise NotImplementedError

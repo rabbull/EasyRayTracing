@@ -1,6 +1,6 @@
 import numpy as np
 
-from .Context import Context
+from .context import ObjParserContext
 from .Handler import Handler
 
 
@@ -9,7 +9,7 @@ class FaceHandler(Handler):
     def key():
         return "f"
 
-    def __call__(self, context: Context, line: str) -> None:
+    def __call__(self, context: ObjParserContext, line: str) -> None:
         splits = line.split()
         assert splits[0] == self.key()
         vertex_count = len(splits[1:])

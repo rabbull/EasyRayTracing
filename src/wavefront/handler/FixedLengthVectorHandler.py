@@ -1,6 +1,6 @@
 import numpy as np
 
-from .Context import Context
+from .context import ObjParserContext
 from .Handler import Handler
 
 
@@ -10,14 +10,14 @@ class FixedLengthVectorHandler(Handler):
         raise NotImplementedError
 
     @staticmethod
-    def dump(context: Context, vector):
+    def dump(context: ObjParserContext, vector):
         raise NotImplementedError
 
     @staticmethod
     def key():
         raise NotImplementedError
 
-    def __call__(self, context: Context, line: str) -> None:
+    def __call__(self, context: ObjParserContext, line: str) -> None:
         splits = line.split()
         assert splits[0] == self.key()
         assert len(splits) == self.length() + 1

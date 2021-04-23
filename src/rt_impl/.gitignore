@@ -2,4 +2,4 @@
 build/
 
 # CLion Default Build Directory
-cmake-build-debug/
+**/cmake-build*/
