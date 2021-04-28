@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <cblas.h>
 
@@ -18,7 +19,6 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTR scene) {
 
     size_t u, v;
     size_t offset;
-    size_t progress = 0;
 
     ray_t *rays;
     vec3_t *directions;
@@ -30,6 +30,7 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTR scene) {
     get_rotation_matrix(&rot, roll, pitch, yaw);
     rays = calloc(sizeof(ray_t), canvas->res_x * canvas->res_y);
     directions = calloc(sizeof(vec3_t), canvas->res_x * canvas->res_y);
+
 #pragma omp parallel for private(u, offset)
     for (v = 0; v < canvas->res_y; ++v) {
         offset = canvas->res_x * v;
@@ -45,17 +46,9 @@ void *rt_impl(camera_t CPTRC camera, scene_t CPTR scene) {
     }
     free(directions);
 
-#pragma omp parallel for private(u) shared(progress)
+#pragma omp parallel for private(u)
     for (v = 0; v < canvas->res_x * canvas->res_y; ++v) {
-        fill_color(canvas->data + v, rays + v, scene, 0, 3);
-#pragma omp critical
-        {
-            progress += 1;
-        }
-        if (progress % 1000 == 0) {
-            printf("progress: %zu%%\n",
-                   progress * 100 / (canvas->res_x * canvas->res_y));
-        }
+        fill_color(canvas->data + v, rays + v, scene, 0, 1);
     }
     free(rays);
 

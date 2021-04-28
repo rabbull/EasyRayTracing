@@ -5,7 +5,6 @@
 #ifndef RT_IMPL_PATCH_H
 #define RT_IMPL_PATCH_H
 
-#include "utils.h"
 #include "ray.h"
 #include "pixel.h"
 

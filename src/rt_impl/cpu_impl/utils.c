@@ -35,7 +35,7 @@ real_t real_abs(real_t v) {
 }
 
 void *ptr_offset(void *ptr, int64_t offset) {
-    return (char *) ptr + offset;
+    return (byte_t *) ptr + offset;
 }
 
 real_t real_rand() {

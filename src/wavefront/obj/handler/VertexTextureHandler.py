@@ -1,15 +1,16 @@
 import numpy as np
 
-from .context import ObjParserContext
-from .Handler import Handler
+from .ObjHandler import ObjHandler
+from ..context import ObjParserContext
 
 
-class VertexTextureHandler(Handler):
+class VertexTextureHandler(ObjHandler):
     @staticmethod
     def key():
         return "vt"
 
-    def __call__(self, context: ObjParserContext, line: str):
+    def __call__(self, context: ObjParserContext, line: str, *args,
+                 **kwargs) -> None:
         splits = line.split()
         assert splits[0] == self.key()
         assert 3 <= len(splits) <= 4

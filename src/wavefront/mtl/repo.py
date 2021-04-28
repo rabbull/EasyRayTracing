@@ -1,10 +1,13 @@
 from typing import *
 import os
 
+from .context import MtlParserContextEntity
+from .parser import WaveFrontMtlParser
 
-class MtlRepository:
+
+class MtlFileRepository:
     _mtl_files: Dict[str, str] = {}
-    _cache = None
+    _cache: Dict[str, List[MtlParserContextEntity]] = {}
 
     def __init__(self, mtl_search_paths: Optional[Iterable[str]] = None):
         if mtl_search_paths is not None:
@@ -15,4 +18,11 @@ class MtlRepository:
                             self._mtl_files[file] = os.path.join(base, file)
 
     def find(self, mtllib: str):
-        return self._mtl_files.get(mtllib)
+        if mtllib not in self._cache:
+            if mtllib not in self._mtl_files:
+                raise FileNotFoundError
+            mtl_file = self._mtl_files.get(mtllib)
+            mtl_parser = WaveFrontMtlParser()
+            mtl_parser.parse(mtl_file)
+            self._cache[mtllib] = mtl_parser.dump()
+        return self._cache[mtllib]

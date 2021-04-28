@@ -1,22 +1,25 @@
 import logging
+from typing import *
 
 import numpy as np
 
-from .context import MtlParserContext, MtlParserContextEntity
+from ..context import MtlParserContext, MtlParserContextEntity
+from ...common import Handler
+from ...common.handler import FixedLengthVectorHandler
 
 
-class MtlHandler(object):
+class MtlHandler(Handler):
     @staticmethod
     def key():
         raise NotImplementedError
 
     @staticmethod
-    def data_type() -> np.dtype:
+    def data_type() -> Type[np.dtype]:
         return np.float64
 
     def __call__(self, context: MtlParserContext, line: str) -> None:
         if len(context.entities) == 0:
-            logging.warning("Ignoring dangling line:", line)
+            logging.warning("Line out of a MTL, ignoring:", line)
             return
 
 
@@ -36,56 +39,61 @@ class NewMtlHandler(MtlHandler):
         entity.specular = np.array([1., 1., 1.], dtype=self.data_type())
         entity.transparency = 1.
         entity.shininess = 0.
-        entity.roi = 1.     # index of refraction
+        entity.roi = 1.  # index of refraction
 
         context.entities.append(entity)
 
 
-class AmbientHandler(MtlHandler):
+class FixedLengthVectorMtlHandler(FixedLengthVectorHandler, MtlHandler):
+    @staticmethod
+    def key() -> str:
+        raise NotImplementedError
+
+    @staticmethod
+    def _num_prefixes() -> int:
+        return 1
+
+    @staticmethod
+    def _num_suffixes() -> int:
+        return 0
+
+    @staticmethod
+    def _vector_size() -> int:
+        return 3
+
+    @staticmethod
+    def _dump(context: MtlParserContext, vector: List[float]) -> None:
+        raise NotImplementedError
+
+
+class AmbientHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key():
         return "ka"
 
-    def __call__(self, context: MtlParserContext, line: str) -> None:
-        super.__call__(context, line)
-
-        splits = line.split()
-        assert splits[0].lower() == self.key()
-        assert len(splits) == 4
-
+    @staticmethod
+    def _dump(context: MtlParserContext, vector: List[float]) -> None:
         context.entities[-1].ambient = \
-            np.array([float(s) for s in splits[1:]], dtype=self.data_type())
+            np.array(vector, dtype=AmbientHandler.data_type())
 
 
-class DiffuseHandler(MtlHandler):
+class DiffuseHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key():
         return "kd"
 
-    def __call__(self, context: MtlParserContext, line: str) -> None:
-        super.__call__(context, line)
-
-        splits = line.split()
-        assert splits[0].lower() == self.key()
-        assert len(splits) == 4
-
+    @staticmethod
+    def _dump(context: MtlParserContext, vector: List[float]) -> None:
         context.entities[-1].diffuse = \
-            np.array([float(s) for s in splits[1:]], dtype=self.data_type())
+            np.array(vector, dtype=AmbientHandler.data_type())
 
 
-class SpecularHandler(MtlHandler):
+class SpecularHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key():
-        return "kd"
+        return "ks"
 
-    def __call__(self, context: MtlParserContext, line: str) -> None:
-        super.__call__(context, line)
-
-        splits = line.split()
-        assert splits[0].lower() == self.key()
-        assert len(splits) == 4
-
+    @staticmethod
+    def _dump(context: MtlParserContext, vector: List[float]) -> None:
         context.entities[-1].specular = \
-            np.array([float(s) for s in splits[1:]], dtype=self.data_type())
-
-
+            np.array(vector, dtype=AmbientHandler.data_type())

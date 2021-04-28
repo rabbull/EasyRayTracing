@@ -12,6 +12,8 @@ typedef enum {
     TRUE = 1
 } bool_t;
 
+typedef unsigned char byte_t;
+
 #ifndef DOUBLE_PRECISION
 typedef float real_t;
 static const real_t real_inf = 1e10f;

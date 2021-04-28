@@ -58,16 +58,16 @@ void mat3_transpose(mat3_t CPTR mat, mat3_t CPTR out) {
     }
 }
 
-void mat3_mm(mat3_t CPTRC mat_1, bool_t const tr_1,
-             mat3_t CPTRC mat_2, bool_t const tr_2,
-             mat3_t CPTR out) {
-    real_t *l_val = (real_t *) mat_1;
-    real_t *r_val = (real_t *) mat_2;
-    real_t *prod_val = (real_t *) out;
-    size_t i, j;
+void mat3_mm(mat3_t CPTRC mat_1, mat3_t CPTRC mat_2, mat3_t CPTR out) {
+    size_t i, j, k;
 
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j) {
+            mat_at(*out, i, j) = 0;
+            for (k = 0; k < 3; ++k) {
+                mat_at(*out, i, j) +=
+                        mat_at(*mat_1, i, k) * mat_at(*mat_2, k, j);
+            }
         }
     }
 }
@@ -75,7 +75,8 @@ void mat3_mm(mat3_t CPTRC mat_1, bool_t const tr_1,
 void get_rotation_matrix(mat3_t CPTR rot, real_t const roll,
                          real_t const pitch, real_t const yaw) {
     real_t cr, sr, cp, sp, cy, sy;
-    mat3_t mat_roll = {0}, mat_pitch = {0}, mat_yaw = {0}, tmp = {0};
+    real_t tmp[9] = {0};
+    mat3_t mat_roll = {0}, mat_pitch = {0}, mat_yaw = {0};
 
     cr = real_cos(roll);
     sr = real_sin(roll);
@@ -98,9 +99,9 @@ void get_rotation_matrix(mat3_t CPTR rot, real_t const roll,
                   0, 0, 1);
 
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                3, 3, 3, 1, &mat_yaw, 3, &mat_pitch, 3, 0, &tmp, 3);
+                3, 3, 3, 1, &mat_yaw, 3, &mat_pitch, 3, 0, tmp, 3);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                3, 3, 3, 1, &tmp, 3, &mat_roll, 3, 0, rot, 3);
+                3, 3, 3, 1, tmp, 3, &mat_roll, 3, 0, rot, 3);
 }
 
 

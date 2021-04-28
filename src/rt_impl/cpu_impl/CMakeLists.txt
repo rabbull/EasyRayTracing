@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 project(rt_cpu_impl LANGUAGES C)
 
-add_compile_definitions(DOUBLE_PRECISION)
-
 set(Python3_FIND_VIRTUALENV ONLY)
 find_package(Python3 COMPONENTS Interpreter Development NumPy)
 message(STATUS "Python3:")
@@ -47,7 +45,6 @@ target_link_directories(rt_cpu_impl PUBLIC
         ${OpenMP_C_LIBRARY_DIRS}
         ${BLAS_LIBRARY_DIRS})
 target_link_libraries(rt_cpu_impl PUBLIC m
-        rt_impl_common
         ${Python3_LIBRARIES}
         ${Python3_NumPy_LIBRARIES}
         ${OpenMP_C_LIBRARIES}

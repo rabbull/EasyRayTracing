@@ -1,10 +1,12 @@
 import logging
 import time
 
+import numpy as np
 from rt_models import Camera, Canvas, Observer, Scene
 
 import rt_impl as rt
 from cli import parse_arguments
+from src.rt_impl.rt_models.scene import Material
 from wavefront import WaveFrontObjParser
 
 
@@ -17,9 +19,22 @@ def main():
 
     logging.debug(str(args))
 
-    parser = WaveFrontObjParser()
+    parser = WaveFrontObjParser(args.mtl)
     parser.parse(args.obj)
-    scene = Scene(**parser.dump()['aggregated'])
+    data = parser.dump()['aggregated']
+
+    materials = data['materials']
+    data['materials'] = []
+    for entry in materials:
+        material = Material()
+        material.k = np.concatenate(
+            (entry.ambient, entry.diffuse, entry.specular)
+        )
+        material.a_texture = None
+        material.d_texture = None
+        material.s_texture = None
+        data['materials'].append(material)
+    scene = Scene(**data)
 
     observer_origin = [float(e) for e in args.camera_origin.split(',')]
     observer_orient = [float(e) for e in args.camera_orient.split(',')]
@@ -34,7 +49,7 @@ def main():
     camera = Camera(observer=observer, canvas=canvas, f=args.focal_length)
     t = time.time()
     rt.observe(camera, scene)
-    logging.info(f"time elapsed: {time.time() - t}s")
+    logging.info(f"Time elapsed: {time.time() - t}s")
     camera.capture().save(args.output)
 
 

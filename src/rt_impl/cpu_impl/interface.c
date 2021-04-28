@@ -12,6 +12,8 @@
 
 #include "include/alg.h"
 
+#define PRINTE(msg)
+
 static PyObject *SpamError;
 
 static PyObject *
@@ -53,7 +55,8 @@ rt_impl_hit(PyObject *self, PyObject *args) {
     print_vec3(&ray_ptr->origin, "origin");
     print_vec3(&ray_ptr->direction, "direction");
 
-    bool_t flag = patch_hit(PyArray_DATA(patch), PyArray_DATA(ray), &distance, NULL);
+    bool_t flag = patch_hit(PyArray_DATA(patch), PyArray_DATA(ray), &distance,
+                            NULL);
     return Py_BuildValue("(if)", flag, distance);
 }
 
@@ -81,7 +84,8 @@ rt_impl_color(PyObject *self, PyObject *args) {
 
 static PyObject *
 rt_impl_observe(PyObject *self, PyObject *args) {
-    size_t i;
+    int i;
+    size_t mtl_idx;
     PyObject *scene_obj;
     PyObject *camera_obj;
     PyObject *observer_obj;
@@ -89,6 +93,8 @@ rt_impl_observe(PyObject *self, PyObject *args) {
     PyObject *origin_obj;
     PyObject *orient_obj;
     PyObject *array_obj;
+    PyObject *material_list_obj;
+    PyObject *material_obj;
     scene_t scene;
     camera_t camera;
     real_t *p;
@@ -97,11 +103,45 @@ rt_impl_observe(PyObject *self, PyObject *args) {
         return NULL;
     }
     array_obj = PyObject_GetAttrString(scene_obj, "_data");
+    if (!PyArray_IS_C_CONTIGUOUS(array_obj)) {
+        fprintf(stderr, "scene._data is not C contiguous!\n");
+        return NULL;
+    }
     scene.num_patches = PyArray_DIM(array_obj, 0);
     scene.patches = PyArray_DATA(array_obj);
     array_obj = PyObject_GetAttrString(scene_obj, "_light");
-    scene.num_lights = PyArray_DIM(array_obj, 0);
-    scene.lights = PyArray_DATA(array_obj);
+    if (array_obj != Py_None) {
+        if (!PyArray_IS_C_CONTIGUOUS(array_obj)) {
+            fprintf(stderr, "scene._light is not C contiguous!\n");
+            return NULL;
+        }
+        scene.num_lights = PyArray_DIM(array_obj, 0);
+        scene.lights = PyArray_DATA(array_obj);
+    } else {
+        scene.num_lights = 0;
+        scene.lights = NULL;
+    }
+
+    material_list_obj = PyObject_GetAttrString(scene_obj, "_materials");
+    scene.num_materials = PyList_Size(material_list_obj);
+    scene.materials = calloc(sizeof(material_t), scene.num_materials);
+    for (i = 0; i < scene.num_materials; ++i) {
+        material_obj = PyList_GetItem(material_list_obj, i);
+        array_obj = PyObject_GetAttrString(material_obj, "k");
+        if (!PyArray_IS_C_CONTIGUOUS(array_obj)) {
+            fprintf(stderr, "scene._materials[%d].k is not C contiguous!\n", i);
+            return NULL;
+        }
+        scene.materials[i] = *(material_t *) PyArray_DATA(array_obj);
+    }
+    array_obj = PyObject_GetAttrString(scene_obj, "_mtl_indices");
+    scene.patch_material = PyArray_DATA(array_obj);
+    for (i = 0; i < scene.num_materials; ++i) {
+        mtl_idx = ((npy_intp *) scene.patch_material)[i];
+        if (mtl_idx != 0) {
+            scene.patch_material[i] = scene.materials + mtl_idx;
+        }
+    }
 
     canvas_obj = PyObject_GetAttrString(camera_obj, "_canvas");
     observer_obj = PyObject_GetAttrString(camera_obj, "_observer");
@@ -121,13 +161,19 @@ rt_impl_observe(PyObject *self, PyObject *args) {
             PyObject_GetAttrString(canvas_obj, "_width"));
     camera.canvas.height = PyFloat_AsDouble(
             PyObject_GetAttrString(canvas_obj, "_height"));
-    camera.canvas.data = PyArray_DATA(
-            PyObject_GetAttrString(canvas_obj, "_data"));
+
+    array_obj = PyObject_GetAttrString(canvas_obj, "_data");
+    if (!PyArray_IS_C_CONTIGUOUS(array_obj)) {
+        fprintf(stderr, "camera._canvas._data is not C contiguous!\n");
+        return NULL;
+    }
+    camera.canvas.data = PyArray_DATA(array_obj);
 
     camera.focal_length = PyFloat_AsDouble(
             PyObject_GetAttrString(camera_obj, "_focal_length"));
 
     rt_impl(&camera, &scene);
+    free(scene.materials);
     Py_RETURN_NONE;
 }
 

@@ -1,20 +1,21 @@
 import numpy as np
 
-from .context import ObjParserContext
-from .Handler import Handler
+from .ObjHandler import ObjHandler
+from ..context import ObjParserContext
 
 
-class FaceHandler(Handler):
+class FaceHandler(ObjHandler):
     @staticmethod
     def key():
         return "f"
 
-    def __call__(self, context: ObjParserContext, line: str) -> None:
+    def __call__(self, context: ObjParserContext, line: str, *args,
+                 **kwargs) -> None:
         splits = line.split()
         assert splits[0] == self.key()
         vertex_count = len(splits[1:])
 
-        # TODO: implement cases of variable number of vertices
+        # TODO: implement cases with variable number of vertices
         if vertex_count != 3:
             raise NotImplementedError
 
@@ -37,5 +38,10 @@ class FaceHandler(Handler):
                 field = int(fields[idx])
                 assert field > 0
                 face[i, idx] = int(fields[idx])
+
+        if context.current_material is not None:
+            context.materials.append(context.current_material.name)
+        else:
+            context.materials.append(None)
 
         context.faces.append(face)

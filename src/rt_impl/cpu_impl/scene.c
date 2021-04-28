@@ -57,8 +57,17 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTR ray, scene_t CPTR scene,
     real_t patch_dist;
     real_t nearest_patch_dist = real_inf;
 
+    material_t *mtl;
+    material_t const default_mtl = {
+            .k = {
+                    .a = {1, 1, 1},
+                    .d = {1, 1, 1},
+                    .s = {1, 1, 1}
+            }
+    };
+
     pix_t *pixels[8];
-    real_t const weights[8] = {1, 10, 1};
+    real_t const weights[8] = {10, 10, 0};
 
     if (depth == max_depth) {
         pix->rgb.r = pix->rgb.g = pix->rgb.b = 0;
@@ -81,6 +90,10 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTR ray, scene_t CPTR scene,
             if (patch_dist < nearest_patch_dist) {
                 nearest_patch_dist = patch_dist;
                 nearest_patch = patch;
+                mtl = scene->patch_material[i];
+                if (mtl == NULL) {
+                    mtl = &default_mtl;
+                }
             }
         }
     }
@@ -89,30 +102,35 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTR ray, scene_t CPTR scene,
         return FALSE;
     }
     if (nearest_light != NULL && nearest_light_dist < nearest_patch_dist) {
-        pix->rgb.r = pix->rgb.g = pix->rgb.b = 255;
+        pix->rgb.r = 255;
+        pix->rgb.g = 255;
+        pix->rgb.b = 255;
         return TRUE;
     }
 
-    ambient.d[0] = 255;
-    ambient.d[1] = 255;
-    ambient.d[2] = 255;
+    for (i = 0; i < 3; ++i) {
+        ambient.d[i] = (uint8_t) (255 * mtl->k.a.d[0]);
+    }
 
     patch = nearest_patch;
     cos_diffuse_angle =
             real_abs(cblas_ddot(3, &ray->direction, 1, &patch->normal, 1))
             / cblas_dnrm2(3, &ray->direction, 1)
             / cblas_dnrm2(3, &patch->normal, 1);
-    diffuse.rgb.r = diffuse.rgb.g = diffuse.rgb.b = 255 * cos_diffuse_angle;
+    for (i = 0; i < 3; ++i) {
+        diffuse.d[i] = (uint8_t) (255 * cos_diffuse_angle * mtl->k.d.d[i]);
+    }
 
-//    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
-//    fill_color(&specular, &specular_ray, scene, depth + 1, max_depth);
+    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
+    fill_color(&specular, &specular_ray, scene, depth + 1, max_depth);
+    for (i = 0; i < 3; ++i) {
+        specular.d[i] *= mtl->k.d.d[i];
+    }
 
-//    pixels[0] = &ambient;
-//    pixels[1] = &diffuse;
-//    pixels[2] = &specular;
-//    blend(pixels, weights, 3, pix);
-
-    pix->rgb = diffuse.rgb;
+    pixels[0] = &ambient;
+    pixels[1] = &diffuse;
+    pixels[2] = &specular;
+    blend(pixels, weights, 3, pix);
 
     return TRUE;
 }

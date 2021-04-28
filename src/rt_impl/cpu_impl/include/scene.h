@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "patch.h"
+#include "material.h"
 
 typedef struct {
     vec3_t vertices[3];
@@ -16,9 +17,13 @@ typedef struct {
 typedef struct {
     size_t num_patches;
     patch_t *patches;
+    material_t **patch_material;
 
     size_t num_lights;
     light_t *lights;
+
+    size_t num_materials;
+    material_t *materials;
 } scene_t;
 
 void combine(size_t n, scene_t *scene, ...);

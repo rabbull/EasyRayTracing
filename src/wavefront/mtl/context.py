@@ -2,6 +2,8 @@ from typing import *
 
 import numpy as np
 
+from ..common import Context
+
 
 class MtlParserContextEntity(object):
     name: str = None                    # usemtl
@@ -12,5 +14,5 @@ class MtlParserContextEntity(object):
     roi: float = None                   # Ni
 
 
-class MtlParserContext(object):
+class MtlParserContext(Context):
     entities: List[MtlParserContextEntity] = []

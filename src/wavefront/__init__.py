@@ -1,1 +1,2 @@
-from .parser import WaveFrontObjParser
+from .mtl import WaveFrontMaterial
+from .obj import WaveFrontObjParser

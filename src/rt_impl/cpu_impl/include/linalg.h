@@ -46,4 +46,6 @@ void vec3_rand_unit(vec3_t *u);
 
 void mat3_transpose(mat3_t *mat, mat3_t *out);
 
+void mat3_mm(mat3_t PTRC mat_1, mat3_t PTRC mat_2, mat3_t *out);
+
 #endif //RT_IMPL_LINALG_H

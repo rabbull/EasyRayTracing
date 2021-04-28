@@ -1,1 +1,2 @@
-from .repo import MtlRepository
+from .context import MtlParserContextEntity as WaveFrontMaterial
+from .repo import MtlFileRepository
