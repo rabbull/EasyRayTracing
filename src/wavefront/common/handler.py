@@ -3,19 +3,19 @@ from typing import *
 from .context import Context
 
 
-class Handler(object):
+class Handler:
     @staticmethod
     def key() -> str:
         raise NotImplementedError
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, context: Context, line: str, *args, **kwargs):
         raise NotImplementedError
 
 
 class FixedLengthVectorHandler(Handler):
     @staticmethod
     def key() -> str:
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def _num_prefixes() -> int:

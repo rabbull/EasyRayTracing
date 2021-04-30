@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "pixel.h"
 #include "linalg.h"
+#include "scene.h"
 
 typedef struct {
     vec3_t origin;
@@ -29,5 +30,7 @@ typedef struct {
     canvas_t canvas;
     real_t focal_length;
 } camera_t;
+
+void *observe(camera_t PTRC camera, scene_t *scene, char PTRC method);
 
 #endif //RT_IMPL_CAMERA_H

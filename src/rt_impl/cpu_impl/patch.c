@@ -2,11 +2,12 @@
 // Created by karl on 4/12/21.
 //
 
-#include <cblas.h>
-#include <lapacke.h>
 #include <stdio.h>
 
-#include "include/patch.h"
+#include <cblas.h>
+#include <lapacke.h>
+
+#include <patch.h>
 
 bool_t patch_hit(patch_t PTRC patch, ray_t PTRC ray, real_t CPTR dist,
                  vec3_t CPTR hit_point) {
@@ -16,11 +17,11 @@ bool_t patch_hit(patch_t PTRC patch, ray_t PTRC ray, real_t CPTR dist,
 
     lapack_int ipiv[9] = {0};
 
-    // base.r[0] = p.v[1] - p.v[0]
+    // base.r[0] = lower.v[1] - lower.v[0]
     cblas_dcopy(3, &patch->vertices[1], 1, &base.r[0], 1);
     cblas_daxpy(3, -1, &patch->vertices[0], 1, &base.r[0], 1);
 
-    // base.r[1] = p.v[2] - p.v[0]
+    // base.r[1] = lower.v[2] - lower.v[0]
     cblas_dcopy(3, &patch->vertices[2], 1, &base.r[1], 1);
     cblas_daxpy(3, -1, &patch->vertices[0], 1, &base.r[1], 1);
 
@@ -32,7 +33,7 @@ bool_t patch_hit(patch_t PTRC patch, ray_t PTRC ray, real_t CPTR dist,
         return FALSE;
     }
 
-    // Solve `base * [u, v, t] = ray.origin - p.v[0]` for `u, v, t`
+    // Solve `base * [u, v, t] = ray.origin - lower.v[0]` for `u, v, t`
     cblas_dcopy(3, &ray->origin, 1, &u_v_t, 1);
     cblas_daxpy(3, -1, &patch->vertices[0], 1, &u_v_t, 1);
     LAPACKE_dgetrs(LAPACK_ROW_MAJOR, 'T', 3, 1, &base, 3, ipiv, &u_v_t, 1);

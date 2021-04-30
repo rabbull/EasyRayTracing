@@ -5,7 +5,7 @@ import numpy as np
 from ..common import Context
 
 
-class MtlParserContextEntity(object):
+class MtlParserContextEntry:
     name: str = None                    # usemtl
     ambient: np.ndarray = None          # Ka
     diffuse: np.ndarray = None          # Kd
@@ -15,4 +15,4 @@ class MtlParserContextEntity(object):
 
 
 class MtlParserContext(Context):
-    entities: List[MtlParserContextEntity] = []
+    entries: List[MtlParserContextEntry] = []

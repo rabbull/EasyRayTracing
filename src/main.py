@@ -6,7 +6,7 @@ from rt_models import Camera, Canvas, Observer, Scene
 
 import rt_impl as rt
 from cli import parse_arguments
-from src.rt_impl.rt_models.scene import Material
+from rt_models.scene import Material
 from wavefront import WaveFrontObjParser
 
 

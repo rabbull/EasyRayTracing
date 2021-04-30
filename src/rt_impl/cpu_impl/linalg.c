@@ -6,7 +6,7 @@
 
 #include <cblas.h>
 
-#include "include/linalg.h"
+#include <linalg.h>
 
 void print_vec3(vec3_t CPTRC vec, char CPTRC name) {
     int i;

@@ -1,11 +1,10 @@
-import logging
 from typing import *
 
 import numpy as np
 
-from ..context import MtlParserContext, MtlParserContextEntity
-from ...common import Handler
-from ...common.handler import FixedLengthVectorHandler
+from .context import MtlParserContext, MtlParserContextEntry
+from ..common import Handler
+from ..common.handler import FixedLengthVectorHandler
 
 
 class MtlHandler(Handler):
@@ -17,10 +16,9 @@ class MtlHandler(Handler):
     def data_type() -> Type[np.dtype]:
         return np.float64
 
-    def __call__(self, context: MtlParserContext, line: str) -> None:
-        if len(context.entities) == 0:
-            logging.warning("Line out of a MTL, ignoring:", line)
-            return
+    def __call__(self, context: MtlParserContext, line: str, *args,
+                 **kwargs) -> None:
+        raise NotImplementedError
 
 
 class NewMtlHandler(MtlHandler):
@@ -28,8 +26,9 @@ class NewMtlHandler(MtlHandler):
     def key():
         return "newmtl"
 
-    def __call__(self, context: MtlParserContext, line: str) -> None:
-        entity = MtlParserContextEntity()
+    def __call__(self, context: MtlParserContext, line: str, *args,
+                 **kwargs) -> None:
+        entity = MtlParserContextEntry()
         entity.name = line.split(maxsplit=2)[1]
 
         # Default values are given by
@@ -41,7 +40,7 @@ class NewMtlHandler(MtlHandler):
         entity.shininess = 0.
         entity.roi = 1.  # index of refraction
 
-        context.entities.append(entity)
+        context.entries.append(entity)
 
 
 class FixedLengthVectorMtlHandler(FixedLengthVectorHandler, MtlHandler):
@@ -68,12 +67,12 @@ class FixedLengthVectorMtlHandler(FixedLengthVectorHandler, MtlHandler):
 
 class AmbientHandler(FixedLengthVectorMtlHandler):
     @staticmethod
-    def key():
+    def key() -> str:
         return "ka"
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
-        context.entities[-1].ambient = \
+        context.entries[-1].ambient = \
             np.array(vector, dtype=AmbientHandler.data_type())
 
 
@@ -84,7 +83,7 @@ class DiffuseHandler(FixedLengthVectorMtlHandler):
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
-        context.entities[-1].diffuse = \
+        context.entries[-1].diffuse = \
             np.array(vector, dtype=AmbientHandler.data_type())
 
 
@@ -95,5 +94,5 @@ class SpecularHandler(FixedLengthVectorMtlHandler):
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
-        context.entities[-1].specular = \
+        context.entries[-1].specular = \
             np.array(vector, dtype=AmbientHandler.data_type())

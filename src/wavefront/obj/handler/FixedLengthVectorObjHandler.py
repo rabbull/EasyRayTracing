@@ -7,6 +7,10 @@ from ...common.handler import FixedLengthVectorHandler
 
 class FixedLengthVectorObjHandler(FixedLengthVectorHandler, ObjHandler):
     @staticmethod
+    def key() -> str:
+        raise NotImplementedError
+
+    @staticmethod
     def _num_prefixes() -> int:
         return 1
 
@@ -19,9 +23,5 @@ class FixedLengthVectorObjHandler(FixedLengthVectorHandler, ObjHandler):
         raise NotImplementedError
 
     @staticmethod
-    def _dump(context: ObjParserContext, vector: List[float]):
-        pass
-
-    @staticmethod
-    def key():
+    def _dump(context: ObjParserContext, vector: List[float]) -> None:
         raise NotImplementedError

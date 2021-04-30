@@ -3,8 +3,9 @@ from typing import *
 
 import numpy as np
 
+from .repo import MtlFileRepository
 from ..common import Context
-from ..mtl import WaveFrontMaterial, MtlFileRepository
+from ..mtl import WaveFrontMaterial
 
 
 class ObjParserContext(Context):

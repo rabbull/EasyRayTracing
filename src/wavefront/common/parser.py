@@ -5,14 +5,13 @@ from .context import Context
 from .handler import Handler
 
 
-class BaseLinedTextFileParser(object):
+class BaseLinedTextFileParser:
     _context: Context = None
     _handler_dict: Dict[str, Handler] = None
 
     def __init__(self, *args, **kwargs):
         self._handler_dict = {}
         context_klass = self._context_base_class()
-        print(context_klass)
         self._context = context_klass(*args, **kwargs)
         self.register_all_subclasses(self._handler_base_class())
 

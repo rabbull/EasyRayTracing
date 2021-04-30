@@ -33,7 +33,7 @@ class WaveFrontObjParser(BaseLinedTextFileParser):
     def _retrieve_key(line: str) -> str:
         return line.split(maxsplit=2)[0]
 
-    def dump(self):
+    def dump(self) -> Dict[str, Any]:
         context = self._context
         raw = {
             "v": cat(context.vertices),
@@ -75,8 +75,6 @@ class WaveFrontObjParser(BaseLinedTextFileParser):
                 material_index = material_name_index_mapping[material_name]
                 material_indices.append(material_index)
         material_indices = np.array(material_indices, dtype=np.int64)
-        print(material_indices)
-        print(material_name_index_mapping)
 
         return {
             "raw": raw,

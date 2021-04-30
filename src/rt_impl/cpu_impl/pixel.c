@@ -7,8 +7,8 @@
 
 #include <cblas.h>
 
-#include "include/pixel.h"
-#include "include/linalg.h"
+#include <linalg.h>
+#include <pixel.h>
 
 void pix_print(pix_t const* pixel, char const* name) {
     size_t i;

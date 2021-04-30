@@ -7,10 +7,9 @@
 #include <Python.h>
 #include <numpy/ndarrayobject.h>
 
+#include <camera.h>
 #include <patch.h>
 #include <scene.h>
-
-#include "include/alg.h"
 
 #define PRINTE(msg)
 
@@ -34,7 +33,7 @@ static PyMethodDef RtImplMethods[] = {
 
 static struct PyModuleDef rt_impl_module = {
         PyModuleDef_HEAD_INIT,
-        "rt_impl",
+        "observe",
         NULL,
         -1,
         RtImplMethods
@@ -78,7 +77,7 @@ rt_impl_color(PyObject *self, PyObject *args) {
     ray = PyArray_DATA(ray_obj);
     pix = PyArray_DATA(pix_obj);
 
-    flag = fill_color(pix, ray, &scene, 0, 1);
+    flag = fill_color(pix, ray, &scene, 0, 1, NULL, NULL);
     return PyLong_FromLong(flag);
 }
 
@@ -172,7 +171,7 @@ rt_impl_observe(PyObject *self, PyObject *args) {
     camera.focal_length = PyFloat_AsDouble(
             PyObject_GetAttrString(camera_obj, "_focal_length"));
 
-    rt_impl(&camera, &scene);
+    observe(&camera, &scene, NULL);
     free(scene.materials);
     Py_RETURN_NONE;
 }

@@ -16,7 +16,7 @@ typedef union {
         uint8_t g;
         uint8_t b;
         uint8_t ignored;
-    } rgb;
+    };
 } pix_t;
 
 void pix_print(pix_t const* pixel, char const* name);

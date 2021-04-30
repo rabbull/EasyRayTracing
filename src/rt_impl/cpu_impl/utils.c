@@ -6,12 +6,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "include/utils.h"
-
-static const real_t EPS = 1e-6;
+#include <utils.h>
 
 bool_t eq(real_t p, real_t q) {
-    return fabs(p - q) < EPS;
+    return fabs(p - q) < real_esp;
 }
 
 real_t real_cos(real_t rad) {
@@ -34,10 +32,6 @@ real_t real_abs(real_t v) {
     return (((v >= 0) << 1) - 1) * v;
 }
 
-void *ptr_offset(void *ptr, int64_t offset) {
-    return (byte_t *) ptr + offset;
-}
-
 real_t real_rand() {
     static bool_t initialized = FALSE;
     if (!initialized) {
@@ -53,4 +47,8 @@ void real_swap(real_t *p, real_t *q) {
     tmp = *p;
     *p = *q;
     *q = tmp;
+}
+
+void *ptr_offset(void *ptr, int64_t offset) {
+    return (byte_t *) ptr + offset;
 }

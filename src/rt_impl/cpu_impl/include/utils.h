@@ -17,9 +17,11 @@ typedef unsigned char byte_t;
 #ifndef DOUBLE_PRECISION
 typedef float real_t;
 static const real_t real_inf = 1e10f;
+static const real_t real_esp = 1e-10f;
 #else
 typedef double real_t;
 static const real_t real_inf = 1e100;
+static const real_t real_esp = 1e-100;
 #endif
 
 bool_t eq(real_t p, real_t q);
