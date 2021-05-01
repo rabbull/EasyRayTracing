@@ -36,40 +36,24 @@
 //}
 
 int main() {
-    vector_t *v, *w;
-    real_t val;
-    int i;
+    ray_t ray = {
+            .origin = {0, 0, 0},
+            .direction = {.1, .1, .1}
+    };
+    patch_t patch = {
+            .vertices = {
+                    {1, 0, 0},
+                    {0, 1, 0},
+                    {0, 0, 1},
+            },
+            .normal = {-1, -1, -1}
+    };
+    bool_t hit;
+    real_t dist;
+    vec3_t hit_point;
 
-    v = vector_new(sizeof(real_t), 20);
-    w = vector_new(sizeof(real_t), 20);
-    for (i = 0; i < 20; ++i) {
-        val = i;
-        vector_append(v, &val);
-        val = pow(-1, i) * i;
-        vector_append(w, &val);
-    }
-
-    for (i = 0; i < v->length; ++i) {
-        val = *(real_t *) vector_at(v, i);
-        printf("%.1lf, ", val);
-    }
-    printf("\n");
-    for (i = 0; i < w->length; ++i) {
-        val = *(real_t *) vector_at(w, i);
-        printf("%.1lf, ", val);
-    }
-    printf("\n");
-
-    vector_sort_by_weights(v, w->payload);
-
-    for (i = 0; i < v->length; ++i) {
-        val = *(real_t *) vector_at(v, i);
-        printf("%.1lf, ", val);
-    }
-    printf("\n");
-    for (i = 0; i < w->length; ++i) {
-        val = *(real_t *) vector_at(w, i);
-        printf("%.1lf, ", val);
-    }
-    printf("\n");
+    hit = patch_hit(&patch, &ray, &dist, &hit_point);
+    printf("hit: %d\n", hit);
+    printf("dist: %.1lf\n", dist);
+    print_vec3(&hit_point, NULL);
 }

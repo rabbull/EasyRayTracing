@@ -5,11 +5,10 @@
 #include <memory.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <time.h>
 
 #include <cblas.h>
 
-#include <kdtree.h>
+#include <bvh.h>
 #include <scene.h>
 #include <vector.h>
 
@@ -40,12 +39,10 @@ void combine(size_t n, scene_t CPTR scene, ...) {
 }
 
 static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
-                               patch_t *CPTR nearest_patch,
+                               patch_t PTRC*nearest_patch,
                                vec3_t CPTR hit_point,
-                               material_t *CPTR mtl) {
+                               material_t PTRC* mtl) {
     size_t i;
-    bool_t hit;
-
     patch_t *patch;
     vec3_t tmp_hit_point;
     real_t patch_dist;
@@ -56,8 +53,7 @@ static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
 
     for (i = 0; i < scene->num_patches; ++i) {
         patch = scene->patches + i;
-        hit = patch_hit(patch, ray, &patch_dist, &tmp_hit_point);
-        if (hit) {
+        if (patch_hit(patch, ray, &patch_dist, &tmp_hit_point)) {
             if (patch_dist < nearest_patch_dist) {
                 *nearest_patch = patch;
                 nearest_patch_dist = patch_dist;
@@ -69,64 +65,70 @@ static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
 }
 
 static void find_intersecting_nodes(ray_t CPTRC ray, vector_t CPTR nodes,
-                                    kdtree_node_t CPTRC node,
-                                    size_t const k) {
-    size_t i;
-    real_t dist;
-    if (!aabb_hit(&node->aabb, ray, &dist)) {
+                                    bvh_tree_node_t CPTRC node) {
+    if (!aabb_hit(&node->aabb, ray)) {
         return;
     }
-    if (kdtree_node_is_leaf(node)) {
-        vector_append(nodes, &node);
+    if (bvh_tree_node_is_leaf(node)) {
+        vector_push_back(nodes, &node);
         return;
     }
-    for (i = 0; i < k; ++i) {
-        find_intersecting_nodes(ray, nodes, node->children + i, k);
-    }
+    find_intersecting_nodes(ray, nodes, node->left);
+    find_intersecting_nodes(ray, nodes, node->right);
 }
 
-static void find_nearest_patch_kdtree(ray_t CPTRC ray, kdtree_t CPTRC tree,
-                                      patch_t PTRC*nearest_patch,
-                                      vec3_t CPTR hit_point,
-                                      material_t *CPTR mtl) {
+static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
+                                   patch_t PTRC*nearest_patch,
+                                   vec3_t CPTR hit_point,
+                                   material_t PTRC* mtl, bool_t verbose) {
     size_t i, j;
     real_t dist, nearest_dist;
-    kdtree_node_t *node;
-    kdtree_payload_t payload;
+    bvh_tree_node_t *node;
+    bvh_payload_t *payload;
     vec3_t tmp_hit_point;
     vector_t *intersecting_nodes;
 
     *nearest_patch = NULL;
     *mtl = NULL;
-    intersecting_nodes = vector_new(sizeof(kdtree_node_t *), 0);
+    intersecting_nodes = vector_new(sizeof(bvh_tree_node_t *), 0);
 
-    find_intersecting_nodes(ray, intersecting_nodes, tree->root, tree->k);
+    find_intersecting_nodes(ray, intersecting_nodes, tree->root);
+    if (verbose) {
+        printf("nodes: %zu\n", intersecting_nodes->length);
+    }
     if (intersecting_nodes->length == 0) {
         vector_destroy(intersecting_nodes);
         return;
     }
+    if (verbose) {
+        printf(">> nodes: %zu\n", intersecting_nodes->length);
+    }
 
     for (i = 0; i < intersecting_nodes->length; ++i) {
-        node = *(kdtree_node_t **) vector_at(intersecting_nodes, i);
+        node = *(bvh_tree_node_t **) vector_at(intersecting_nodes, i);
         nearest_dist = real_inf;
         for (j = 0; j < node->payload_slice_size; ++j) {
-            payload = node->payload_slice[j];
-            if (patch_hit(payload.patch, ray, &dist, &tmp_hit_point)) {
+            payload = node->payload_slice + j;
+            if (verbose) {
+                patch_print(payload->patch, "patch", "\t>");
+            }
+            if (patch_hit(payload->patch, ray, &dist, &tmp_hit_point)) {
                 if (dist < nearest_dist) {
                     nearest_dist = dist;
-                    *nearest_patch = payload.patch;
-                    *mtl = payload.mtl;
+                    *nearest_patch = payload->patch;
+                    *mtl = payload->mtl;
                     *hit_point = tmp_hit_point;
                 }
             }
         }
     }
+
     vector_destroy(intersecting_nodes);
 }
 
 bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
                   size_t const depth, size_t const max_depth,
-                  char CPTRC method, void *additional_args) {
+                  char CPTRC method, void *additional_args, bool_t verbose) {
     size_t i;
     vec3_t hit_point = {0};
 
@@ -142,11 +144,11 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
     real_t light_dist;
     real_t nearest_light_dist = real_inf;
 
-    patch_t *patch;
-    patch_t *nearest_patch = NULL;
+    patch_t PTRC patch;
+    patch_t PTRC nearest_patch = NULL;
     real_t nearest_patch_dist = real_inf;
 
-    material_t *mtl = NULL;
+    material_t PTRC mtl = NULL;
     material_t const default_mtl = {
             .k = {
                     .a = {1, 1, 1},
@@ -176,24 +178,17 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
 
     if (method == NULL) {
         find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl);
-    } else if (strcmp(method, "kdtree") == 0) {
-        find_nearest_patch_kdtree(ray, (kdtree_t *) additional_args,
-                                  &nearest_patch, &hit_point, &mtl);
+    } else if (str_startswith(method, "bvh")) {
+        if (verbose) ray_print(ray, "ray");
+        find_nearest_patch_bvh(ray, (bvh_tree_t *) additional_args,
+                               &nearest_patch, &hit_point, &mtl, verbose);
+    } else {
+        fprintf(stderr, "Method not supported: %s\n", method);
+        return FALSE;
     }
-
-//    clock_t begin = clock();
-//    find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl);
-//    printf("find_nearest_patch: %lfs\n",
-//           (real_t) (clock() - begin) / CLOCKS_PER_SEC);
-//
-//    begin = clock();
-//    find_nearest_patch_kdtree(ray, (kdtree_t *) additional_args,
-//                              &nearest_patch, &hit_point, &mtl);
-//    printf("find_nearest_patch_kdtree: %lfs\n",
-//           (real_t) (clock() - begin) / CLOCKS_PER_SEC);
-
-    if (mtl == NULL) {
-        mtl = &default_mtl;
+    if (verbose) {
+        printf("?? %p\n", nearest_patch);
+        if (nearest_patch) patch_print(nearest_patch, "np", NULL);
     }
 
     if (nearest_patch == NULL && nearest_light == NULL) {
@@ -207,30 +202,34 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
         return TRUE;
     }
 
+    if (mtl == NULL) {
+        mtl = &default_mtl;
+    }
     for (i = 0; i < 3; ++i) {
         ambient.d[i] = (uint8_t) (255 * mtl->k.a.d[0]);
     }
 
     patch = nearest_patch;
-    cos_diffuse_angle =
-            real_abs(cblas_ddot(3, &ray->direction, 1, &patch->normal, 1))
-            / cblas_dnrm2(3, &ray->direction, 1)
-            / cblas_dnrm2(3, &patch->normal, 1);
+    cos_diffuse_angle = real_abs(
+            vec3_dot(&ray->direction, &patch->normal)
+            / vec3_norm2(&ray->direction)
+            / vec3_norm2(&patch->normal)
+    );
     for (i = 0; i < 3; ++i) {
         diffuse.d[i] = (uint8_t) (255 * cos_diffuse_angle * mtl->k.d.d[i]);
     }
 
-    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
-    fill_color(&specular, &specular_ray, scene, depth + 1, max_depth, method,
-               additional_args);
-    for (i = 0; i < 3; ++i) {
-        specular.d[i] *= mtl->k.d.d[i];
-    }
+//    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
+//    fill_color(&specular, &specular_ray, scene, depth + 1, max_depth, method,
+//               additional_args);
+//    for (i = 0; i < 3; ++i) {
+//        specular.d[i] *= mtl->k.d.d[i];
+//    }
 
     pixels[0] = &ambient;
     pixels[1] = &diffuse;
-    pixels[2] = &specular;
-    blend(pixels, weights, 3, pix);
+//    pixels[2] = &specular;
+    blend(pixels, weights, 2, pix);
 
     return TRUE;
 }

@@ -9,23 +9,23 @@
 #include <utils.h>
 
 bool_t eq(real_t p, real_t q) {
-    return fabs(p - q) < real_esp;
+    return real_abs(p - q) < real_esp;
 }
 
 real_t real_cos(real_t rad) {
-    if (sizeof(real_t) == sizeof(double)) {
+#ifdef DOUBLE_PRECISION
         return cos(rad);
-    } else {
+#else
         return cosf(rad);
-    }
+#endif
 }
 
 real_t real_sin(real_t rad) {
-    if (sizeof(real_t) == sizeof(double)) {
-        return sin(rad);
-    } else {
-        return sinf(rad);
-    }
+#ifdef DOUBLE_PRECISION
+    return sin(rad);
+#else
+    return sinf(rad);
+#endif
 }
 
 real_t real_abs(real_t v) {
@@ -51,4 +51,18 @@ void real_swap(real_t *p, real_t *q) {
 
 void *ptr_offset(void *ptr, int64_t offset) {
     return (byte_t *) ptr + offset;
+}
+
+bool_t str_startswith(char CPTRC str, char CPTRC target) {
+    char const *q = str;
+    char const *p = target;
+
+    while (*p != 0) {
+        if (*p != *q) {
+            return FALSE;
+        }
+        p += 1;
+        q += 1;
+    }
+    return TRUE;
 }

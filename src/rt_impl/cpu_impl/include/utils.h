@@ -14,14 +14,18 @@ typedef enum {
 
 typedef unsigned char byte_t;
 
-#ifndef DOUBLE_PRECISION
-typedef float real_t;
-static const real_t real_inf = 1e10f;
-static const real_t real_esp = 1e-10f;
-#else
+#define PTRC const*
+#define CPTR *const
+#define CPTRC const*const
+
+#ifdef DOUBLE_PRECISION
 typedef double real_t;
 static const real_t real_inf = 1e100;
 static const real_t real_esp = 1e-100;
+#else
+typedef float real_t;
+static const real_t real_inf = 1e10f;
+static const real_t real_esp = 1e-10f;
 #endif
 
 bool_t eq(real_t p, real_t q);
@@ -38,8 +42,6 @@ void real_swap(real_t *p, real_t *q);
 
 void *ptr_offset(void *ptr, int64_t offset);
 
-#define PTRC const*
-#define CPTR *const
-#define CPTRC const*const
+bool_t str_startswith(char PTRC str, char PTRC target);
 
 #endif //RT_IMPL_UTILS_H

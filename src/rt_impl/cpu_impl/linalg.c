@@ -16,7 +16,7 @@ void print_vec3(vec3_t CPTRC vec, char CPTRC name) {
     }
     printf("[");
     for (i = 0; i < 3; ++i) {
-        printf(&", %.3lf"[(i == 0) << 1u], vec->d[i]);
+        printf(&", %.5lf"[(i == 0) << 1u], vec->d[i]);
     }
     printf("]\n");
 }
@@ -31,7 +31,7 @@ void print_mat3(mat3_t CPTRC mat, char CPTRC name) {
     for (i = 0; i < 3; ++i) {
         printf("\t");
         for (j = 0; j < 3; ++j) {
-            printf(&", %.3lf"[(j == 0) << 1u], mat->r[i].d[j]);
+            printf(&", %.5lf"[(j == 0) << 1u], mat->r[i].d[j]);
         }
         printf("\n");
     }
@@ -104,10 +104,6 @@ void get_rotation_matrix(mat3_t CPTR rot, real_t const roll,
                 3, 3, 3, 1, tmp, 3, &mat_roll, 3, 0, rot, 3);
 }
 
-
-void vec3_left_multiply(vec3_t CPTR vec, mat3_t CPTRC mat, bool_t const trans) {
-}
-
 vec3_t PTRC vec3_zeros() {
     static const vec3_t zeros = {0, 0, 0};
     return &zeros;
@@ -125,4 +121,63 @@ void vec3_rand_unit(vec3_t *u) {
         u->d[i] = real_rand();
     }
     cblas_dscal(3, 1 / cblas_dnrm2(3, u, 1), u, 1);
+}
+
+void vec3_copy(vec3_t CPTR dst, vec3_t CPTRC src) {
+#ifdef DOUBLE_PRECISION
+    cblas_dcopy(3, src, 1, dst, 1);
+#else
+    cblas_scopy(3, src, 1, dst, 1);
+#endif
+}
+
+void vec3_scale(vec3_t CPTR v, real_t alpha) {
+#ifdef DOUBLE_PRECISION
+    cblas_dscal(3, alpha, v, 1);
+#else
+    cblas_sscal(3, alpha, v, 1);
+#endif
+}
+
+void vec3_axpy(real_t alpha, vec3_t CPTRC x, vec3_t CPTR y) {
+#ifdef DOUBLE_PRECISION
+    cblas_daxpy(3, alpha, x, 1, y, 1);
+#else
+    cblas_saxpy(3, alpha, x, 1, y, 1);
+#endif
+}
+
+void vec3_plus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q) {
+    vec3_copy(dst, p);
+    vec3_axpy(1, q, dst);
+}
+
+void vec3_minus(vec3_t CPTR dst, vec3_t CPTRC p, vec3_t CPTRC q) {
+    vec3_copy(dst, p);
+    vec3_axpy(-1, q, dst);
+}
+
+real_t vec3_dot(vec3_t CPTRC p, vec3_t CPTRC q) {
+#ifdef DOUBLE_PRECISION
+    return cblas_ddot(3, p, 1, q, 1);
+#else
+    return cblas_sdot(3, p, 1, q, 1);
+#endif
+}
+
+void vec3_cross(vec3_t CPTR dst, vec3_t CPTRC p, vec3_t CPTRC q) {
+    vec_at(*dst, 0) =
+            vec_at(*p, 1) * vec_at(*q, 2) - vec_at(*p, 2) * vec_at(*q, 1);
+    vec_at(*dst, 1) =
+            vec_at(*p, 2) * vec_at(*q, 0) - vec_at(*p, 0) * vec_at(*q, 2);
+    vec_at(*dst, 2) =
+            vec_at(*p, 0) * vec_at(*q, 1) - vec_at(*p, 1) * vec_at(*q, 0);
+}
+
+real_t vec3_norm2(vec3_t CPTRC vec) {
+#ifdef DOUBLE_PRECISION
+    return cblas_dnrm2(3, vec, 1);
+#else
+    return cblas_snrm2(3, vec, 1);
+#endif
 }

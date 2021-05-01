@@ -19,11 +19,15 @@ vector_t *vector_new(size_t el_size, size_t capability);
 
 void *vector_at(vector_t PTRC vector, size_t index);
 
-void vector_append(vector_t *vector, void *element);
+void vector_push_back(vector_t *vector, void *element);
+
+void vector_pop_back(vector_t *vector, void *buf, size_t buf_size);
 
 typedef struct {
-    void* args;
+    void *args;
+
     bool_t (*cmp)(void *p, void *q, void *args);
+
     void (*swap)(void *p, void *q, void *args);
 } sort_helper_t;
 

@@ -26,13 +26,23 @@ void *vector_at(vector_t PTRC vector, size_t index) {
     return ptr_offset(vector->payload, index * vector->el_size);
 }
 
-void vector_append(vector_t *vector, void *element) {
+void vector_push_back(vector_t *vector, void *element) {
     if (vector->length == vector->capability) {
         vector->capability *= 2;
         vector->payload = realloc(vector->payload,
                                   vector->capability * vector->el_size);
     }
     memcpy(vector_at(vector, vector->length++), element, vector->el_size);
+}
+
+void vector_pop_back(vector_t *vector, void *buf, size_t buf_size) {
+    if (buf != NULL && buf_size < vector->el_size) {
+        return;
+    }
+    vector->length -= 1;
+    if (buf) {
+        memcpy(vector_at(vector, vector->length), buf, vector->el_size);
+    }
 }
 
 static void

@@ -48,7 +48,7 @@ def main():
 
     camera = Camera(observer=observer, canvas=canvas, f=args.focal_length)
     t = time.time()
-    rt.observe(camera, scene)
+    rt.observe("bvhmiddle", camera, scene)
     logging.info(f"Time elapsed: {time.time() - t}s")
     camera.capture().save(args.output)
 

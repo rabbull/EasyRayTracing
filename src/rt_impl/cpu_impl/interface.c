@@ -77,7 +77,7 @@ rt_impl_color(PyObject *self, PyObject *args) {
     ray = PyArray_DATA(ray_obj);
     pix = PyArray_DATA(pix_obj);
 
-    flag = fill_color(pix, ray, &scene, 0, 1, NULL, NULL);
+    flag = fill_color(pix, ray, &scene, 0, 1, NULL, NULL, 0);
     return PyLong_FromLong(flag);
 }
 
@@ -97,8 +97,9 @@ rt_impl_observe(PyObject *self, PyObject *args) {
     scene_t scene;
     camera_t camera;
     real_t *p;
+    char PTRC method;
 
-    if (!PyArg_ParseTuple(args, "OO", &camera_obj, &scene_obj)) {
+    if (!PyArg_ParseTuple(args, "sOO", &method, &camera_obj, &scene_obj)) {
         return NULL;
     }
     array_obj = PyObject_GetAttrString(scene_obj, "_data");
@@ -171,7 +172,7 @@ rt_impl_observe(PyObject *self, PyObject *args) {
     camera.focal_length = PyFloat_AsDouble(
             PyObject_GetAttrString(camera_obj, "_focal_length"));
 
-    observe(&camera, &scene, NULL);
+    observe(&camera, &scene, method);
     free(scene.materials);
     Py_RETURN_NONE;
 }

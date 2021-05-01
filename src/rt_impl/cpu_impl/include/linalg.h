@@ -36,13 +36,27 @@ void print_mat3(mat3_t PTRC mat, char PTRC name);
 
 void get_rotation_matrix(mat3_t *rot, real_t roll, real_t pitch, real_t yaw);
 
-void vec3_left_multiply(vec3_t *vec, mat3_t PTRC mat, bool_t trans);
-
 vec3_t PTRC vec3_zeros();
 
 mat3_t PTRC mat3_zeros();
 
 void vec3_rand_unit(vec3_t *u);
+
+void vec3_copy(vec3_t *dst, vec3_t PTRC src);
+
+void vec3_axpy(real_t alpha, vec3_t PTRC x, vec3_t *y);
+
+void vec3_scale(vec3_t *v, real_t alpha);
+
+void vec3_plus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q);
+
+void vec3_minus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q);
+
+real_t vec3_dot(vec3_t PTRC p, vec3_t PTRC q);
+
+real_t vec3_norm2(vec3_t CPTRC vec);
+
+void vec3_cross(vec3_t *dst, vec3_t PTRC, vec3_t PTRC);
 
 void mat3_transpose(mat3_t *mat, mat3_t *out);
 

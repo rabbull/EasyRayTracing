@@ -28,7 +28,9 @@ class FaceHandler(ObjHandler):
             elif len(fields) == 2:
                 indices = [0, 1]
             elif len(fields) == 3:
-                if fields[1] == "":
+                if fields[1] == "" and fields[2] == "":
+                    indices = [0]
+                elif fields[1] == "":
                     indices = [0, 2]
                 else:
                     indices = [0, 1, 2]
