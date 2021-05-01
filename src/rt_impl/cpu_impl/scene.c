@@ -80,7 +80,7 @@ static void find_intersecting_nodes(ray_t CPTRC ray, vector_t CPTR nodes,
 static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
                                    patch_t PTRC*nearest_patch,
                                    vec3_t CPTR hit_point,
-                                   material_t PTRC* mtl, bool_t verbose) {
+                                   material_t PTRC* mtl) {
     size_t i, j;
     real_t dist, nearest_dist;
     bvh_tree_node_t *node;
@@ -93,15 +93,9 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
     intersecting_nodes = vector_new(sizeof(bvh_tree_node_t *), 0);
 
     find_intersecting_nodes(ray, intersecting_nodes, tree->root);
-    if (verbose) {
-        printf("nodes: %zu\n", intersecting_nodes->length);
-    }
     if (intersecting_nodes->length == 0) {
         vector_destroy(intersecting_nodes);
         return;
-    }
-    if (verbose) {
-        printf(">> nodes: %zu\n", intersecting_nodes->length);
     }
 
     for (i = 0; i < intersecting_nodes->length; ++i) {
@@ -109,9 +103,6 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
         nearest_dist = real_inf;
         for (j = 0; j < node->payload_slice_size; ++j) {
             payload = node->payload_slice + j;
-            if (verbose) {
-                patch_print(payload->patch, "patch", "\t>");
-            }
             if (patch_hit(payload->patch, ray, &dist, &tmp_hit_point)) {
                 if (dist < nearest_dist) {
                     nearest_dist = dist;
@@ -128,7 +119,7 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
 
 bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
                   size_t const depth, size_t const max_depth,
-                  char CPTRC method, void *additional_args, bool_t verbose) {
+                  char CPTRC method, void *additional_args) {
     size_t i;
     vec3_t hit_point = {0};
 
@@ -179,16 +170,11 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
     if (method == NULL) {
         find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl);
     } else if (str_startswith(method, "bvh")) {
-        if (verbose) ray_print(ray, "ray");
         find_nearest_patch_bvh(ray, (bvh_tree_t *) additional_args,
-                               &nearest_patch, &hit_point, &mtl, verbose);
+                               &nearest_patch, &hit_point, &mtl);
     } else {
         fprintf(stderr, "Method not supported: %s\n", method);
         return FALSE;
-    }
-    if (verbose) {
-        printf("?? %p\n", nearest_patch);
-        if (nearest_patch) patch_print(nearest_patch, "np", NULL);
     }
 
     if (nearest_patch == NULL && nearest_light == NULL) {

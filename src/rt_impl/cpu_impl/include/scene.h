@@ -30,7 +30,7 @@ void combine(size_t n, scene_t *scene, ...);
 
 bool_t fill_color(pix_t* pix, ray_t PTRC ray, scene_t PTRC scene,
                   size_t depth, size_t max_depth,
-                  char PTRC method, void* additional_args, bool_t verbose);
+                  char PTRC method, void* additional_args);
 
 void scene_print(scene_t PTRC scene, char PTRC name, char PTRC prefix);
 

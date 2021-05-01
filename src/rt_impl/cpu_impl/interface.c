@@ -77,7 +77,7 @@ rt_impl_color(PyObject *self, PyObject *args) {
     ray = PyArray_DATA(ray_obj);
     pix = PyArray_DATA(pix_obj);
 
-    flag = fill_color(pix, ray, &scene, 0, 1, NULL, NULL, 0);
+    flag = fill_color(pix, ray, &scene, 0, 1, NULL, NULL);
     return PyLong_FromLong(flag);
 }
 

@@ -77,18 +77,15 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
 #pragma omp parallel for private(v) shared(method, additional_args)
     for (v = 0; v < canvas->res_x * canvas->res_y; ++v) {
         fill_color(canvas->data + v, rays + v, scene, 0, 1,
-                   method, additional_args, v == 24 * canvas->res_x + 16);
+                   method, additional_args);
 #pragma omp critical
         {
             progress += 1;
             percent = progress * 100 / (canvas->res_x * canvas->res_y);
             if (percent > max_percent) {
                 max_percent = percent;
-//                printf("progress: %zu%%\n", max_percent);
+                printf("progress: %zu%%\n", max_percent);
             }
-        }
-        if (v == 24 * canvas->res_x + 16) {
-            pix_print(canvas->data + v, "the pixel");
         }
     }
 
