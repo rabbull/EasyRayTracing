@@ -56,19 +56,17 @@ bool_t patch_hit(patch_t PTRC patch, ray_t PTRC ray, real_t CPTR dist,
 
 void patch_reflect(patch_t CPTRC patch, ray_t CPTRC ray, vec3_t CPTRC hit_point,
                    ray_t CPTR reflection) {
-    real_t *normal = (real_t *) &patch->normal;
-    real_t *o_origin = (real_t *) &reflection->origin;
-    real_t *o_dir = (real_t *) &reflection->direction;
-    real_t *i_dir = (real_t *) &ray->direction;
+    vec3_t u_normal = {0};
+    real_t alpha;
 
-    vec3_t normal_u = {0};
+    vec3_copy(&u_normal, &patch->normal);
+    vec3_scale(&u_normal, 1. / vec3_norm2(&u_normal));
 
-    cblas_daxpy(3, 1 / cblas_dnrm2(3, normal, 1), normal, 1, &normal_u, 1);
+    vec3_copy(&reflection->origin, hit_point);
 
-    cblas_dcopy(3, hit_point, 1, o_origin, 1);
-    cblas_dcopy(3, i_dir, 1, o_dir, 1);
-    cblas_daxpy(3, 2 * cblas_ddot(3, i_dir, 1, &normal_u, 1),
-                &normal_u, 1, o_dir, 1);
+    vec3_copy(&reflection->direction, &ray->direction);
+    alpha = -2 * vec3_dot(&ray->direction, &u_normal);
+    vec3_axpy(alpha, &u_normal, &reflection->direction);
 }
 
 void patch_print(const patch_t *patch, char PTRC name, char PTRC prefix) {

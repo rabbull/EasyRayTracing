@@ -23,6 +23,10 @@ def main():
     parser.parse(args.obj)
     data = parser.dump()['aggregated']
 
+    light_parser = WaveFrontObjParser()
+    light_parser.parse(args.light)
+    data['light_faces'] = light_parser.dump()['aggregated']['faces']
+
     materials = data['materials']
     data['materials'] = []
     for entry in materials:

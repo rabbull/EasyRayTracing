@@ -42,6 +42,10 @@ mat3_t PTRC mat3_zeros();
 
 void vec3_rand_unit(vec3_t *u);
 
+void vec3_avg(vec3_t *out, vec3_t PTRC vectors, size_t n);
+
+real_t vec3_cos_intersection_angle(vec3_t PTRC p, vec3_t PTRC q);
+
 void vec3_copy(vec3_t *dst, vec3_t PTRC src);
 
 void vec3_axpy(real_t alpha, vec3_t PTRC x, vec3_t *y);
@@ -54,7 +58,7 @@ void vec3_minus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q);
 
 real_t vec3_dot(vec3_t PTRC p, vec3_t PTRC q);
 
-real_t vec3_norm2(vec3_t CPTRC vec);
+real_t vec3_norm2(vec3_t PTRC vec);
 
 void vec3_cross(vec3_t *dst, vec3_t PTRC, vec3_t PTRC);
 

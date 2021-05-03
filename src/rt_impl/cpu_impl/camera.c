@@ -74,9 +74,10 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
     }
 
     printf("rendering..\n");
-#pragma omp parallel for private(v) shared(method, additional_args)
+#pragma omp parallel for \
+    private(v) shared(method, additional_args) schedule(static, 4)
     for (v = 0; v < canvas->res_x * canvas->res_y; ++v) {
-        fill_color(canvas->data + v, rays + v, scene, 0, 1,
+        fill_color(canvas->data + v, rays + v, scene, 0, 2,
                    method, additional_args);
 #pragma omp critical
         {

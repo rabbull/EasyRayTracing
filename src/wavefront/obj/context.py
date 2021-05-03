@@ -24,6 +24,13 @@ class ObjParserContext(Context):
         logging.info(f"Initializing MTL file repository, "
                      f"search paths: {mtl_search_paths}")
         self.mtl_repository = MtlFileRepository(mtl_search_paths)
+        self.material_dict = {}
+        self.current_material = None
+        self.vertices = []
+        self.texture_coordinates = []
+        self.vertex_normals = []
+        self.faces = []
+        self.materials = []
 
     def __str__(self):
         return "vertices: %s\n" % self.vertices \

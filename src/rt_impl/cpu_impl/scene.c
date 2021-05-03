@@ -41,7 +41,7 @@ void combine(size_t n, scene_t CPTR scene, ...) {
 static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
                                patch_t PTRC*nearest_patch,
                                vec3_t CPTR hit_point,
-                               material_t PTRC* mtl) {
+                               material_t PTRC*mtl) {
     size_t i;
     patch_t *patch;
     vec3_t tmp_hit_point;
@@ -49,7 +49,9 @@ static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
     real_t nearest_patch_dist = real_inf;
 
     *nearest_patch = NULL;
-    *mtl = NULL;
+    if (mtl != NULL) {
+        *mtl = NULL;
+    }
 
     for (i = 0; i < scene->num_patches; ++i) {
         patch = scene->patches + i;
@@ -57,8 +59,12 @@ static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
             if (patch_dist < nearest_patch_dist) {
                 *nearest_patch = patch;
                 nearest_patch_dist = patch_dist;
-                cblas_dcopy(3, &tmp_hit_point, 1, hit_point, 1);
-                *mtl = scene->patch_material[i];
+                if (hit_point != NULL) {
+                    vec3_copy(hit_point, &tmp_hit_point);
+                }
+                if (mtl != NULL) {
+                    *mtl = scene->patch_material[i];
+                }
             }
         }
     }
@@ -80,7 +86,7 @@ static void find_intersecting_nodes(ray_t CPTRC ray, vector_t CPTR nodes,
 static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
                                    patch_t PTRC*nearest_patch,
                                    vec3_t CPTR hit_point,
-                                   material_t PTRC* mtl) {
+                                   material_t PTRC*mtl) {
     size_t i, j;
     real_t dist, nearest_dist;
     bvh_tree_node_t *node;
@@ -89,7 +95,9 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
     vector_t *intersecting_nodes;
 
     *nearest_patch = NULL;
-    *mtl = NULL;
+    if (mtl != NULL) {
+        *mtl = NULL;
+    }
     intersecting_nodes = vector_new(sizeof(bvh_tree_node_t *), 0);
 
     find_intersecting_nodes(ray, intersecting_nodes, tree->root);
@@ -107,8 +115,12 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
                 if (dist < nearest_dist) {
                     nearest_dist = dist;
                     *nearest_patch = payload->patch;
-                    *mtl = payload->mtl;
-                    *hit_point = tmp_hit_point;
+                    if (mtl != NULL) {
+                        *mtl = payload->mtl;
+                    }
+                    if (hit_point != NULL) {
+                        vec3_copy(hit_point, &tmp_hit_point);
+                    }
                 }
             }
         }
@@ -117,29 +129,40 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
     vector_destroy(intersecting_nodes);
 }
 
+static void random_reflection_direction(vec3_t CPTRC normal,
+                                        vec3_t CPTR direction) {
+    vec3_t p;
+    real_t r = vec3_norm2(normal);
+    do {
+        p.d[0] = real_rand() - 1;
+        p.d[1] = real_rand() - 1;
+        p.d[2] = real_rand() - 1;
+    } while (vec3_norm2(&p) > 1);
+    vec3_scale(&p, r);
+    vec3_plus(direction, normal, &p);
+}
+
 bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
                   size_t const depth, size_t const max_depth,
                   char CPTRC method, void *additional_args) {
-    size_t i;
+    size_t i, j;
     vec3_t hit_point = {0};
-
     pix_t ambient = {0};
     pix_t diffuse = {0};
-    real_t cos_diffuse_angle;
+    vec3_t diffuse_acc = {0};
+    ray_t diffuse_ray;
     pix_t specular = {0};
     ray_t specular_ray = {0};
-
+    real_t cos_specular_angle;
     light_t *light;
     patch_t light_patch;
     light_t *nearest_light = NULL;
     real_t light_dist;
     real_t nearest_light_dist = real_inf;
-
-    patch_t PTRC patch;
     patch_t PTRC nearest_patch = NULL;
     real_t nearest_patch_dist = real_inf;
-
     material_t PTRC mtl = NULL;
+    pix_t *pixels[8];
     material_t const default_mtl = {
             .k = {
                     .a = {1, 1, 1},
@@ -147,9 +170,8 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
                     .s = {1, 1, 1}
             }
     };
-
-    pix_t *pixels[8];
-    real_t const weights[8] = {0, 10, 10};
+    real_t const weights[8] = {0.1, 0.1, 1};
+    size_t const monte_carlo_num = 4;
 
     if (depth == max_depth) {
         pix->r = pix->g = pix->b = 0;
@@ -195,27 +217,43 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
         ambient.d[i] = (uint8_t) (255 * mtl->k.a.d[0]);
     }
 
-    patch = nearest_patch;
-    cos_diffuse_angle = real_abs(
-            vec3_dot(&ray->direction, &patch->normal)
-            / vec3_norm2(&ray->direction)
-            / vec3_norm2(&patch->normal)
-    );
-    for (i = 0; i < 3; ++i) {
-        diffuse.d[i] = (uint8_t) (255 * cos_diffuse_angle * mtl->k.d.d[i]);
+    vec3_copy(&diffuse_acc, vec3_zeros());
+    for (i = 0; i < monte_carlo_num; ++i) {
+        vec3_copy(&diffuse_ray.origin, &hit_point);
+        random_reflection_direction(&nearest_patch->normal,
+                                    &diffuse_ray.direction);
+        if (vec3_cos_intersection_angle(&ray->direction,
+                                        &nearest_patch->normal) > 0) {
+            vec3_scale(&diffuse_ray.direction, -1);
+        }
+        fill_color(&diffuse, &diffuse_ray, scene, depth + 1, max_depth,
+                   method, additional_args);
+        for (j = 0; j < 3; ++j) {
+            diffuse_acc.d[j] += diffuse.d[j];
+        }
+    }
+    for (j = 0; j < 3; ++j) {
+        diffuse.d[j] = diffuse_acc.d[j] / monte_carlo_num;
     }
 
-//    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
-//    fill_color(&specular, &specular_ray, scene, depth + 1, max_depth, method,
-//               additional_args);
-//    for (i = 0; i < 3; ++i) {
-//        specular.d[i] *= mtl->k.d.d[i];
-//    }
+    patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
+    cos_specular_angle = vec3_dot(&ray->direction, &specular_ray.direction)
+                         / vec3_norm2(&ray->direction)
+                         / vec3_norm2(&specular_ray.direction);
+    if (cos_specular_angle < 0) {
+        specular.r = specular.g = specular.b = 0;
+    } else {
+        fill_color(&specular, &specular_ray, scene, depth + 1, max_depth,
+                   method, additional_args);
+        for (i = 0; i < 3; ++i) {
+            specular.d[i] *= mtl->k.d.d[i] * cos_specular_angle;
+        }
+    }
 
     pixels[0] = &ambient;
     pixels[1] = &diffuse;
-//    pixels[2] = &specular;
-    blend(pixels, weights, 2, pix);
+    pixels[2] = &specular;
+    blend(pixels, weights, 3, pix);
 
     return TRUE;
 }

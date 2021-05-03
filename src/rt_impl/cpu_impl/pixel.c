@@ -10,7 +10,7 @@
 #include <linalg.h>
 #include <pixel.h>
 
-void pix_print(pix_t const* pixel, char const* name) {
+void pix_print(pix_t const *pixel, char const *name) {
     size_t i;
 
     printf("%s = [", name);
@@ -28,7 +28,7 @@ static void avg(pix_t CPTR CPTR pixels, size_t const n, pix_t CPTR output) {
             accumulated.d[j] += pixels[i]->d[j];
         }
     }
-    cblas_dscal(3, 1. / n, &accumulated, 1);
+    vec3_scale(&accumulated, 1. / n);
     for (i = 0; i < 3; ++i) {
         output->d[i] = (uint8_t) accumulated.d[i];
     }

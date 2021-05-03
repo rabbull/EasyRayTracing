@@ -48,4 +48,4 @@ class Camera(object):
         self._focal_length = f
 
     def capture(self) -> Image:
-        return self._canvas.as_image()
+        return self._canvas.as_image().transpose(Image.TRANSPOSE)

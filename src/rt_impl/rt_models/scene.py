@@ -17,7 +17,8 @@ class Scene(object):
     _materials: List[Material] = None
 
     def __init__(self, faces: np.ndarray, normals: np.ndarray,
-                 mtl_indices: np.ndarray, materials: List[Material]):
+                 mtl_indices: np.ndarray, materials: List[Material],
+                 light_faces: np.ndarray):
         assert faces.shape[0] == normals.shape[0]
         assert (faces.ndim == 3 and faces.shape[1] == faces.shape[2] == 3) \
                or (faces.ndim == 2 and faces.shape[1] == 9)
@@ -30,6 +31,7 @@ class Scene(object):
 
         self._mtl_indices = mtl_indices
         self._materials = materials
+        self._light = light_faces
 
     def add_ground(self, axis: int, location: float = -5, size: float = 1e5):
         pass

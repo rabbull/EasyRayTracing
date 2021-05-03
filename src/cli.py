@@ -13,6 +13,8 @@ def parse_arguments():
 
     parser.add_argument("obj", action="store", type=str,
                         help="required, the .OBJ file to be rendered")
+    parser.add_argument("--light", action="store", type=str,
+                        help="required, the light object")
     parser.add_argument("--mtl", action="extend", nargs="+", type=str,
                         help=".MTL file search paths, default: [.]")
 

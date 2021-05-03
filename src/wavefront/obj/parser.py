@@ -10,8 +10,6 @@ from ..common import cat
 
 
 class WaveFrontObjParser(BaseLinedTextFileParser):
-    _context: ObjParserContext
-
     def __init__(self, mtl_search_paths: Optional[Iterable[str]] = None, *args,
                  **kwargs):
         super().__init__(mtl_search_paths, *args, **kwargs)

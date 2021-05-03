@@ -123,6 +123,20 @@ void vec3_rand_unit(vec3_t *u) {
     cblas_dscal(3, 1 / cblas_dnrm2(3, u, 1), u, 1);
 }
 
+void vec3_avg(vec3_t CPTR out, vec3_t CPTRC vectors, size_t const n) {
+    size_t i;
+    real_t inv_n = 1. / n;
+
+    vec3_copy(out, vec3_zeros());
+    for (i = 0; i < n; ++i) {
+        vec3_axpy(inv_n, vectors + i, out);
+    }
+}
+
+real_t vec3_cos_intersection_angle(vec3_t PTRC p, vec3_t PTRC q) {
+    return vec3_dot(p, q) / vec3_norm2(p) / vec3_norm2(q);
+}
+
 void vec3_copy(vec3_t CPTR dst, vec3_t CPTRC src) {
 #ifdef DOUBLE_PRECISION
     cblas_dcopy(3, src, 1, dst, 1);
