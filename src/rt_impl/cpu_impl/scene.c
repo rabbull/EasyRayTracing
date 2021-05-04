@@ -140,6 +140,7 @@ static void random_reflection_direction(vec3_t CPTRC normal,
     } while (vec3_norm2(&p) > 1);
     vec3_scale(&p, r);
     vec3_plus(direction, normal, &p);
+    vec3_scale(direction, 1 / vec3_norm2(direction));
 }
 
 bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
@@ -151,6 +152,7 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
     pix_t diffuse = {0};
     vec3_t diffuse_acc = {0};
     ray_t diffuse_ray;
+    real_t cos_diffuse_angle;
     pix_t specular = {0};
     ray_t specular_ray = {0};
     real_t cos_specular_angle;
@@ -165,13 +167,11 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
     pix_t *pixels[8];
     material_t const default_mtl = {
             .k = {
-                    .a = {1, 1, 1},
-                    .d = {1, 1, 1},
-                    .s = {1, 1, 1}
+                    .a = {0, 0, 0},
+                    .d = {0.8, 0.8, 0.8},
+                    .s = {0.8, 0.8, 0.8}
             }
     };
-    real_t const weights[8] = {0.1, 0.1, 1};
-    size_t const monte_carlo_num = 4;
 
     if (depth == max_depth) {
         pix->r = pix->g = pix->b = 0;
@@ -189,7 +189,7 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
         }
     }
 
-    if (method == NULL) {
+    if (strcmp(method, "naive") == 0) {
         find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl);
     } else if (str_startswith(method, "bvh")) {
         find_nearest_patch_bvh(ray, (bvh_tree_t *) additional_args,
@@ -214,46 +214,48 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
         mtl = &default_mtl;
     }
     for (i = 0; i < 3; ++i) {
-        ambient.d[i] = (uint8_t) (255 * mtl->k.a.d[0]);
+        ambient.d[i] = (uint8_t) (0xff * mtl->k.a.d[i]);
     }
 
     vec3_copy(&diffuse_acc, vec3_zeros());
-    for (i = 0; i < monte_carlo_num; ++i) {
-        vec3_copy(&diffuse_ray.origin, &hit_point);
-        random_reflection_direction(&nearest_patch->normal,
-                                    &diffuse_ray.direction);
-        if (vec3_cos_intersection_angle(&ray->direction,
-                                        &nearest_patch->normal) > 0) {
-            vec3_scale(&diffuse_ray.direction, -1);
-        }
+    vec3_copy(&diffuse_ray.origin, &hit_point);
+    random_reflection_direction(&nearest_patch->normal,
+                                &diffuse_ray.direction);
+    if (vec3_cos_intersection_angle(&ray->direction,
+                                    &nearest_patch->normal) > 0) {
+        vec3_scale(&diffuse_ray.direction, -1);
+    }
+    cos_diffuse_angle = real_abs(
+            vec3_cos_intersection_angle(&diffuse_ray.direction,
+                                        &ray->direction)
+    );
+    if (cos_diffuse_angle > 0) {
         fill_color(&diffuse, &diffuse_ray, scene, depth + 1, max_depth,
                    method, additional_args);
-        for (j = 0; j < 3; ++j) {
-            diffuse_acc.d[j] += diffuse.d[j];
+        for (i = 0; i < 3; ++i) {
+            diffuse.d[i] = diffuse.d[i] * cos_diffuse_angle * 0.66;
         }
-    }
-    for (j = 0; j < 3; ++j) {
-        diffuse.d[j] = diffuse_acc.d[j] / monte_carlo_num;
+    } else {
+        diffuse.r = diffuse.g = diffuse.b = 0;
     }
 
     patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
-    cos_specular_angle = vec3_dot(&ray->direction, &specular_ray.direction)
-                         / vec3_norm2(&ray->direction)
-                         / vec3_norm2(&specular_ray.direction);
+    cos_specular_angle = vec3_cos_intersection_angle(&ray->direction,
+                                                     &specular_ray.direction);
     if (cos_specular_angle < 0) {
         specular.r = specular.g = specular.b = 0;
     } else {
         fill_color(&specular, &specular_ray, scene, depth + 1, max_depth,
                    method, additional_args);
         for (i = 0; i < 3; ++i) {
-            specular.d[i] *= mtl->k.d.d[i] * cos_specular_angle;
+            specular.d[i] *= mtl->k.d.d[i] * cos_specular_angle * 0.66;
         }
     }
 
     pixels[0] = &ambient;
-    pixels[1] = &diffuse;
-    pixels[2] = &specular;
-    blend(pixels, weights, 3, pix);
+    pixels[1] = &specular;
+    pixels[2] = &diffuse;
+    pix_accumulate(pixels, 3, pix);
 
     return TRUE;
 }

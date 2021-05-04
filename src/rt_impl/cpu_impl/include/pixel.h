@@ -21,6 +21,8 @@ typedef union {
 
 void pix_print(pix_t const* pixel, char const* name);
 
-void blend(pix_t *const *pixels, real_t PTRC weights, size_t n, pix_t *output);
+void pix_accumulate(pix_t PTRC *pixels, size_t n, pix_t *output);
+
+void pix_blend(pix_t const* const* pixels, real_t PTRC weights, size_t n, pix_t *output);
 
 #endif //RT_IMPL_PIXEL_H

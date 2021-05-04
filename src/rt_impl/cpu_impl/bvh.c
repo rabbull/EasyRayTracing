@@ -96,10 +96,10 @@ static void do_bvh_tree_construct(bvh_tree_node_t *node,
     if (bvh_tree_construct_should_terminate(node)) {
         return;
     }
+
     node->left = calloc(2, sizeof(bvh_tree_node_t));
     node->right = node->left + 1;
 
-    // choose the longest edge to divide
     for (plane_axis = 0; plane_axis < 3; ++plane_axis) {
         edge_length =
                 node->aabb.upper.d[plane_axis] - node->aabb.lower.d[plane_axis];
@@ -159,7 +159,7 @@ static void do_bvh_tree_construct(bvh_tree_node_t *node,
     node->right->payload_slice_size = node->payload_slice_size - l;
 
     node = node->left;
-#pragma omp parallel for shared(node, method), private(i)
+#pragma omp parallel for shared(node, method) private(i)
     for (i = 0; i < 2; ++i) {
         do_bvh_tree_construct(node + i, method);
     }
@@ -167,12 +167,11 @@ static void do_bvh_tree_construct(bvh_tree_node_t *node,
 
 bvh_tree_t *bvh_tree_construct(scene_t CPTRC scene,
                                bvh_split_method_t const method) {
-    size_t i, j;
+    size_t i;
 
     bvh_payload_t *payload;
     bvh_tree_t *tree = malloc(sizeof(bvh_tree_t));
 
-    // initialize tree
     tree->root = malloc(sizeof(bvh_tree_node_t));
     tree->num_payloads = scene->num_patches;
     tree->payloads = calloc(tree->num_payloads, sizeof(bvh_payload_t));
@@ -184,10 +183,7 @@ bvh_tree_t *bvh_tree_construct(scene_t CPTRC scene,
         payload = tree->payloads + i;
         payload->patch = scene->patches + i;
         payload->mtl = scene->patch_material[i];
-        for (j = 0; j < 3; ++j) {
-            cblas_daxpy(3, 1. / 3., payload->patch->vertices + j, 1,
-                        &payload->patch_center, 1);
-        }
+        vec3_avg(&payload->patch_center, payload->patch->vertices, 3);
         aabb_extend_for(&tree->root->aabb, payload->patch);
     }
 

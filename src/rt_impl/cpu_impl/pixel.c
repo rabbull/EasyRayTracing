@@ -20,7 +20,23 @@ void pix_print(pix_t const *pixel, char const *name) {
     printf("]\n");
 }
 
-static void avg(pix_t CPTR CPTR pixels, size_t const n, pix_t CPTR output) {
+void pix_accumulate(pix_t PTRC*pixels, size_t n, pix_t *output) {
+    size_t i, j, tmp;
+    for (i = 0; i < n; ++i) {
+        for (j = 0; j < 3; ++j) {
+            if (output->d[j] < 255) {
+                tmp = output->d[j] + pixels[i]->d[j];
+                if (tmp > 255) {
+                    output->d[j] = 255;
+                } else {
+                    output->d[j] = tmp;
+                }
+            }
+        }
+    }
+}
+
+static void avg(pix_t PTRC PTRC const pixels, size_t const n, pix_t CPTR output) {
     size_t i, j;
     vec3_t accumulated = {0};
     for (i = 0; i < n; ++i) {
@@ -34,8 +50,8 @@ static void avg(pix_t CPTR CPTR pixels, size_t const n, pix_t CPTR output) {
     }
 }
 
-void blend(pix_t CPTR CPTR pixels, real_t CPTRC weights, size_t const n,
-           pix_t CPTR output) {
+void pix_blend(pix_t PTRC PTRC const pixels, real_t CPTRC weights, size_t n,
+               pix_t CPTR output) {
     size_t i, j;
     real_t sum = 0;
     vec3_t accumulated = {0};

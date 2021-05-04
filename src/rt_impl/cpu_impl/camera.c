@@ -12,6 +12,7 @@
 #include <scene.h>
 #include <bvh.h>
 #include <vector.h>
+#include <string.h>
 
 void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
     canvas_t CPTRC canvas = &camera->canvas;
@@ -41,7 +42,7 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
     rays = calloc(sizeof(ray_t), canvas->res_x * canvas->res_y);
     directions = calloc(sizeof(vec3_t), canvas->res_x * canvas->res_y);
 
-    if (method == NULL) {
+    if (strcmp(method, "naive") == 0) {
         // doing nothing
     } else if (str_startswith(method, "bvh")) {
         printf("constructing bvh tree..\n");
@@ -77,17 +78,17 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
 #pragma omp parallel for \
     private(v) shared(method, additional_args) schedule(static, 4)
     for (v = 0; v < canvas->res_x * canvas->res_y; ++v) {
-        fill_color(canvas->data + v, rays + v, scene, 0, 2,
+        fill_color(canvas->data + v, rays + v, scene, 0, 3,
                    method, additional_args);
-#pragma omp critical
-        {
-            progress += 1;
-            percent = progress * 100 / (canvas->res_x * canvas->res_y);
-            if (percent > max_percent) {
-                max_percent = percent;
-                printf("progress: %zu%%\n", max_percent);
-            }
-        }
+//#pragma omp critical
+//        {
+//            progress += 1;
+//            percent = progress * 100 / (canvas->res_x * canvas->res_y);
+//            if (percent > max_percent) {
+//                max_percent = percent;
+//                printf("progress: %zu%%\n", max_percent);
+//            }
+//        }
     }
 
     cleanup_and_exit:

@@ -4,9 +4,6 @@
 
 #include <stdio.h>
 
-#include <cblas.h>
-#include <lapacke.h>
-
 #include <patch.h>
 
 static bool_t moller_trumbore_intersection_algorithm(patch_t CPTRC patch,
