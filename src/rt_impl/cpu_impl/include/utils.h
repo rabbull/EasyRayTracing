@@ -14,27 +14,32 @@ typedef enum {
 
 typedef unsigned char byte_t;
 
+byte_t byte_min(byte_t p, byte_t q);
+byte_t byte_max(byte_t p, byte_t q);
+
 #define PTRC const*
 #define CPTR *const
 #define CPTRC const*const
 
 #ifdef DOUBLE_PRECISION
 typedef double real_t;
-static const real_t real_inf = 1e100;
-static const real_t real_esp = 1e-100;
+static const real_t real_inf = 1e20;
+static const real_t real_eps = 1e-20;
 #else
 typedef float real_t;
 static const real_t real_inf = 1e10f;
-static const real_t real_esp = 1e-10f;
+static const real_t real_eps = 1e-10f;
 #endif
-
-bool_t eq(real_t p, real_t q);
 
 real_t real_cos(real_t rad);
 
 real_t real_sin(real_t rad);
 
 real_t real_abs(real_t v);
+
+real_t real_max(real_t p, real_t q);
+
+real_t real_min(real_t p, real_t q);
 
 real_t real_rand();
 

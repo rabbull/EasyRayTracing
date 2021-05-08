@@ -35,8 +35,10 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
     bvh_tree_t *tree = NULL;
     void *additional_args = NULL;
 
+#ifdef SHOW_PROGRESS
     size_t progress = 0;
     size_t percent, max_percent = 0;
+#endif
 
     get_rotation_matrix(&rot, roll, pitch, yaw);
     rays = calloc(sizeof(ray_t), canvas->res_x * canvas->res_y);
@@ -78,17 +80,19 @@ void *observe(camera_t CPTRC camera, scene_t CPTR scene, char CPTRC method) {
 #pragma omp parallel for \
     private(v) shared(method, additional_args) schedule(static, 4)
     for (v = 0; v < canvas->res_x * canvas->res_y; ++v) {
-        fill_color(canvas->data + v, rays + v, scene, 0, 3,
+        fill_color(canvas->data + v, rays + v, scene, 0, 1,
                    method, additional_args);
-//#pragma omp critical
-//        {
-//            progress += 1;
-//            percent = progress * 100 / (canvas->res_x * canvas->res_y);
-//            if (percent > max_percent) {
-//                max_percent = percent;
-//                printf("progress: %zu%%\n", max_percent);
-//            }
-//        }
+#ifdef SHOW_PROGRESS
+#pragma omp critical
+        {
+            progress += 1;
+            percent = progress * 100 / (canvas->res_x * canvas->res_y);
+            if (percent > max_percent) {
+                max_percent = percent;
+                printf("progress: %zu%%\n", max_percent);
+            }
+        }
+#endif
     }
 
     cleanup_and_exit:

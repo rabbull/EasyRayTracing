@@ -19,7 +19,7 @@ static bool_t moller_trumbore_intersection_algorithm(patch_t CPTRC patch,
     vec3_cross(&p, &ray->direction, &e[1]);
     det = vec3_dot(&e[0], &p);
 
-    if (real_abs(det) < real_esp) {
+    if (real_abs(det) < real_eps) {
         return FALSE;
     }
     inv_det = 1. / det;
@@ -34,7 +34,7 @@ static bool_t moller_trumbore_intersection_algorithm(patch_t CPTRC patch,
         return FALSE;
     }
     d = vec3_dot(&e[1], &q) * inv_det;
-    if (d < real_esp) {
+    if (d < real_eps) {
         return FALSE;
     }
     *dist = d;
@@ -64,6 +64,7 @@ void patch_reflect(patch_t CPTRC patch, ray_t CPTRC ray, vec3_t CPTRC hit_point,
     vec3_copy(&reflection->direction, &ray->direction);
     alpha = -2 * vec3_dot(&ray->direction, &u_normal);
     vec3_axpy(alpha, &u_normal, &reflection->direction);
+    vec3_axpy(1e-3, &reflection->direction, &reflection->origin);
 }
 
 void patch_print(const patch_t *patch, char PTRC name, char PTRC prefix) {

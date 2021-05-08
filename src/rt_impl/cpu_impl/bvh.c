@@ -17,7 +17,7 @@ bool_t aabb_hit(aabb_t CPTRC aabb, ray_t CPTRC ray) {
     real_t CPTR origin = (real_t *) &ray->origin;
 
     for (axis = 0; axis < 3; ++axis) {
-        if (real_abs(direction[axis]) < real_esp) {
+        if (direction[axis] == 0) {
             if (origin[axis] > upper[axis] || origin[axis] < lower[axis]) {
                 return FALSE;
             }
@@ -38,6 +38,52 @@ bool_t aabb_hit(aabb_t CPTRC aabb, ray_t CPTRC ray) {
     }
     return t[0][0] < t[1][0];
 }
+
+//bool_t aabb_hit(aabb_t CPTRC aabb, ray_t CPTRC ray) {
+//    size_t axis;
+//    size_t whichPlane;
+//    real_t candidate_plane[3];
+//    real_t t[3];
+//    bool_t inside = TRUE;
+//    enum {
+//        Q_LEFT, Q_RIGHT, Q_MID
+//    } quadrant[3];
+//
+//    for (axis = 0; axis < 3; ++axis) {
+//        if (ray->origin.d[axis] < aabb->lower.d[axis]) {
+//            quadrant[axis] = Q_LEFT;
+//            candidate_plane[axis] = aabb->lower.d[axis];
+//            inside = FALSE;
+//        } else if (ray->origin.d[axis] > aabb->upper.d[axis]) {
+//            quadrant[axis] = Q_RIGHT;
+//            candidate_plane[axis] = aabb->upper.d[axis];
+//            inside = FALSE;
+//        } else {
+//            quadrant[axis] = Q_MID;
+//        }
+//    }
+//
+//    if (inside) {
+//        return TRUE;
+//    }
+//
+//    for (axis = 0; axis < 3; ++axis) {
+//        if (quadrant[axis] != Q_MID && ray->direction.d[axis] != 0) {
+//            t[axis] = (candidate_plane[axis] - ray->origin.d[axis])
+//                      / ray->direction.d[axis];
+//        } else {
+//            t[axis] = -1;
+//        }
+//    }
+//
+//    whichPlane = 0;
+//    for (axis = 1; axis < 3; ++axis) {
+//        if (t[axis] > t[whichPlane]) {
+//            whichPlane = axis;
+//        }
+//    }
+//    return t[whichPlane] > 0;
+//}
 
 static bool_t aabb_contains_patch(aabb_t CPTRC aabb, patch_t CPTRC patch) {
     size_t i, j;
@@ -92,8 +138,10 @@ static void do_bvh_tree_construct(bvh_tree_node_t *node,
     real_t edge_length;
     real_t max_edge_length = -real_inf;
     bvh_payload_t tmp_payload;
+    bvh_payload_t CPTR payload_slice = node->payload_slice;
 
     if (bvh_tree_construct_should_terminate(node)) {
+        node->left = node->right = NULL;
         return;
     }
 
@@ -130,32 +178,32 @@ static void do_bvh_tree_construct(bvh_tree_node_t *node,
         node->right->aabb.upper.d[i] = -real_inf;
     }
     while (TRUE) {
-        while (node->payload_slice[l].patch_center.d[plane_axis] <= plane_pos
+        while (payload_slice[l].patch_center.d[plane_axis] <= plane_pos
                && l < r) {
-            aabb_extend_for(&node->left->aabb, node->payload_slice[l].patch);
+            aabb_extend_for(&node->left->aabb, payload_slice[l].patch);
             l += 1;
         }
-        while (node->payload_slice[r].patch_center.d[plane_axis] > plane_pos
+        while (payload_slice[r].patch_center.d[plane_axis] > plane_pos
                && l < r) {
-            aabb_extend_for(&node->right->aabb, node->payload_slice[r].patch);
+            aabb_extend_for(&node->right->aabb, payload_slice[r].patch);
             r -= 1;
         }
         if (l == r) {
             break;
         }
-        tmp_payload = node->payload_slice[l];
-        node->payload_slice[l] = node->payload_slice[r];
-        node->payload_slice[r] = tmp_payload;
+        tmp_payload = payload_slice[l];
+        payload_slice[l] = payload_slice[r];
+        payload_slice[r] = tmp_payload;
     }
-    if (l == 0 || r == node->payload_slice_size - 1) {
+    if (l == 0 || l == node->payload_slice_size - 1) {
         free(node->left);
         node->left = node->right = NULL;
         return;
     }
 
-    node->left->payload_slice = node->payload_slice;
+    node->left->payload_slice = payload_slice;
     node->left->payload_slice_size = l;
-    node->right->payload_slice = node->payload_slice + l;
+    node->right->payload_slice = payload_slice + l;
     node->right->payload_slice_size = node->payload_slice_size - l;
 
     node = node->left;

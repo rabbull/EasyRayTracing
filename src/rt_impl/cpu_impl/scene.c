@@ -41,7 +41,8 @@ void combine(size_t n, scene_t CPTR scene, ...) {
 static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
                                patch_t PTRC*nearest_patch,
                                vec3_t CPTR hit_point,
-                               material_t PTRC*mtl) {
+                               material_t PTRC*mtl,
+                               patch_t CPTRC ignore_patch) {
     size_t i;
     patch_t *patch;
     vec3_t tmp_hit_point;
@@ -55,6 +56,9 @@ static void find_nearest_patch(ray_t CPTRC ray, scene_t CPTRC scene,
 
     for (i = 0; i < scene->num_patches; ++i) {
         patch = scene->patches + i;
+        if (patch == ignore_patch) {
+            continue;
+        }
         if (patch_hit(patch, ray, &patch_dist, &tmp_hit_point)) {
             if (patch_dist < nearest_patch_dist) {
                 *nearest_patch = patch;
@@ -86,7 +90,8 @@ static void find_intersecting_nodes(ray_t CPTRC ray, vector_t CPTR nodes,
 static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
                                    patch_t PTRC*nearest_patch,
                                    vec3_t CPTR hit_point,
-                                   material_t PTRC*mtl) {
+                                   material_t PTRC*mtl,
+                                   patch_t CPTRC ignore_patch) {
     size_t i, j;
     real_t dist, nearest_dist;
     bvh_tree_node_t *node;
@@ -111,6 +116,9 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
         nearest_dist = real_inf;
         for (j = 0; j < node->payload_slice_size; ++j) {
             payload = node->payload_slice + j;
+            if (payload->patch == ignore_patch) {
+                continue;
+            }
             if (patch_hit(payload->patch, ray, &dist, &tmp_hit_point)) {
                 if (dist < nearest_dist) {
                     nearest_dist = dist;
@@ -119,7 +127,7 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
                         *mtl = payload->mtl;
                     }
                     if (hit_point != NULL) {
-                        vec3_copy(hit_point, &tmp_hit_point);
+                        *hit_point = tmp_hit_point;
                     }
                 }
             }
@@ -129,47 +137,30 @@ static void find_nearest_patch_bvh(ray_t CPTRC ray, bvh_tree_t CPTRC tree,
     vector_destroy(intersecting_nodes);
 }
 
-static void random_reflection_direction(vec3_t CPTRC normal,
-                                        vec3_t CPTR direction) {
-    vec3_t p;
-    real_t r = vec3_norm2(normal);
-    do {
-        p.d[0] = real_rand() - 1;
-        p.d[1] = real_rand() - 1;
-        p.d[2] = real_rand() - 1;
-    } while (vec3_norm2(&p) > 1);
-    vec3_scale(&p, r);
-    vec3_plus(direction, normal, &p);
-    vec3_scale(direction, 1 / vec3_norm2(direction));
-}
-
 bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
                   size_t const depth, size_t const max_depth,
-                  char CPTRC method, void *additional_args) {
+                  char CPTRC method, void *args) {
     size_t i, j;
+    int tmp;
     vec3_t hit_point = {0};
+    light_t *light;
+    patch_t *patch;
     pix_t ambient = {0};
     pix_t diffuse = {0};
-    vec3_t diffuse_acc = {0};
     ray_t diffuse_ray;
     real_t cos_diffuse_angle;
     pix_t specular = {0};
     ray_t specular_ray = {0};
     real_t cos_specular_angle;
-    light_t *light;
-    patch_t light_patch;
-    light_t *nearest_light = NULL;
-    real_t light_dist;
-    real_t nearest_light_dist = real_inf;
     patch_t PTRC nearest_patch = NULL;
-    real_t nearest_patch_dist = real_inf;
+    vec3_t nearest_patch_normal = {0};
     material_t PTRC mtl = NULL;
     pix_t *pixels[8];
     material_t const default_mtl = {
             .k = {
-                    .a = {0, 0, 0},
-                    .d = {0.8, 0.8, 0.8},
-                    .s = {0.8, 0.8, 0.8}
+                    .a = {0.1, 0.1, 0.1},
+                    .d = {1, 1, 1},
+                    .s = {1, 1, 1}
             }
     };
 
@@ -178,83 +169,88 @@ bool_t fill_color(pix_t CPTR pix, ray_t CPTRC ray, scene_t CPTRC scene,
         return FALSE;
     }
 
-    for (i = 0; i < scene->num_lights; ++i) {
-        light = scene->lights + i;
-        cblas_dcopy(9, light->vertices, 1, light_patch.vertices, 1);
-        if (patch_hit(&light_patch, ray, &light_dist, &hit_point)) {
-            if (light_dist < nearest_light_dist) {
-                nearest_light_dist = light_dist;
-                nearest_light = light;
-            }
-        }
-    }
-
+    // visibility
     if (strcmp(method, "naive") == 0) {
-        find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl);
+        find_nearest_patch(ray, scene, &nearest_patch, &hit_point, &mtl, NULL);
     } else if (str_startswith(method, "bvh")) {
-        find_nearest_patch_bvh(ray, (bvh_tree_t *) additional_args,
-                               &nearest_patch, &hit_point, &mtl);
+        find_nearest_patch_bvh(ray, args, &nearest_patch, &hit_point, &mtl,
+                               NULL);
     } else {
         fprintf(stderr, "Method not supported: %s\n", method);
         return FALSE;
     }
 
-    if (nearest_patch == NULL && nearest_light == NULL) {
+    if (nearest_patch == NULL) {
         pix->r = pix->g = pix->b = 0;
         return FALSE;
     }
-    if (nearest_light != NULL && nearest_light_dist < nearest_patch_dist) {
-        pix->r = 255;
-        pix->g = 255;
-        pix->b = 255;
-        return TRUE;
+
+    nearest_patch_normal = nearest_patch->normal;
+    if (vec3_dot(&ray->direction, &nearest_patch_normal) > 0) {
+        vec3_scale(&nearest_patch_normal, -1);
     }
 
     if (mtl == NULL) {
         mtl = &default_mtl;
     }
+
+    // ambient
     for (i = 0; i < 3; ++i) {
         ambient.d[i] = (uint8_t) (0xff * mtl->k.a.d[i]);
     }
 
-    vec3_copy(&diffuse_acc, vec3_zeros());
-    vec3_copy(&diffuse_ray.origin, &hit_point);
-    random_reflection_direction(&nearest_patch->normal,
-                                &diffuse_ray.direction);
-    if (vec3_cos_intersection_angle(&ray->direction,
-                                    &nearest_patch->normal) > 0) {
-        vec3_scale(&diffuse_ray.direction, -1);
-    }
-    cos_diffuse_angle = real_abs(
-            vec3_cos_intersection_angle(&diffuse_ray.direction,
-                                        &ray->direction)
-    );
-    if (cos_diffuse_angle > 0) {
-        fill_color(&diffuse, &diffuse_ray, scene, depth + 1, max_depth,
-                   method, additional_args);
-        for (i = 0; i < 3; ++i) {
-            diffuse.d[i] = diffuse.d[i] * cos_diffuse_angle * 0.66;
+    // diffuse
+    diffuse_ray.origin = hit_point;
+    for (i = 0; i < scene->num_lights; ++i) {
+        light = scene->lights + i;
+        vec3_minus(&diffuse_ray.direction, &light->origin, &hit_point);
+        vec3_normalize(&diffuse_ray.direction);
+        if (strcmp(method, "naive") == 0) {
+            find_nearest_patch(&diffuse_ray, scene, &patch,
+                               NULL, NULL, nearest_patch);
+        } else if (str_startswith(method, "bvh")) {
+            find_nearest_patch_bvh(&diffuse_ray, args, &patch,
+                                   NULL, NULL, nearest_patch);
+        } else {
+            fprintf(stderr, "Method not supported: %s\n", method);
+            return FALSE;
         }
-    } else {
-        diffuse.r = diffuse.g = diffuse.b = 0;
+        if (patch != NULL) {
+            continue;
+        }
+        cos_diffuse_angle = vec3_cos_intersection_angle(&diffuse_ray.direction,
+                                                        &nearest_patch_normal);
+        if (cos_diffuse_angle < 0) {
+            continue;
+        }
+        for (j = 0; j < 3; ++j) {
+            tmp = diffuse.d[j]
+                  + 0.8 * cos_diffuse_angle * mtl->k.d.d[j] * light->color.d[j];
+            if (tmp < 0xff) {
+                diffuse.d[j] = tmp;
+            } else {
+                diffuse.d[j] = 0xff;
+            }
+        }
     }
 
+    // specular
     patch_reflect(nearest_patch, ray, &hit_point, &specular_ray);
-    cos_specular_angle = vec3_cos_intersection_angle(&ray->direction,
-                                                     &specular_ray.direction);
+    cos_specular_angle = -vec3_cos_intersection_angle(&ray->direction,
+                                                      &nearest_patch_normal);
     if (cos_specular_angle < 0) {
         specular.r = specular.g = specular.b = 0;
     } else {
         fill_color(&specular, &specular_ray, scene, depth + 1, max_depth,
-                   method, additional_args);
+                   method, args);
         for (i = 0; i < 3; ++i) {
-            specular.d[i] *= mtl->k.d.d[i] * cos_specular_angle * 0.66;
+            specular.d[i] *= 0.8 * mtl->k.d.d[i] * cos_specular_angle;
         }
     }
 
     pixels[0] = &ambient;
-    pixels[1] = &specular;
-    pixels[2] = &diffuse;
+    pixels[1] = &diffuse;
+    pixels[2] = &specular;
     pix_accumulate(pixels, 3, pix);
 
     return TRUE;

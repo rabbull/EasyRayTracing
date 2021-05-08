@@ -153,6 +153,10 @@ void vec3_scale(vec3_t CPTR v, real_t alpha) {
 #endif
 }
 
+void vec3_normalize(vec3_t CPTR v) {
+    vec3_scale(v, vec3_norm2(v));
+}
+
 void vec3_axpy(real_t alpha, vec3_t CPTRC x, vec3_t CPTR y) {
 #ifdef DOUBLE_PRECISION
     cblas_daxpy(3, alpha, x, 1, y, 1);

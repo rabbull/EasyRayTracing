@@ -68,7 +68,7 @@ class FixedLengthVectorMtlHandler(FixedLengthVectorHandler, MtlHandler):
 class AmbientHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key() -> str:
-        return "ka"
+        return "Ka"
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
@@ -79,20 +79,20 @@ class AmbientHandler(FixedLengthVectorMtlHandler):
 class DiffuseHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key():
-        return "kd"
+        return "Kd"
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
         context.entries[-1].diffuse = \
-            np.array(vector, dtype=AmbientHandler.data_type())
+            np.array(vector, dtype=DiffuseHandler.data_type())
 
 
 class SpecularHandler(FixedLengthVectorMtlHandler):
     @staticmethod
     def key():
-        return "ks"
+        return "Ks"
 
     @staticmethod
     def _dump(context: MtlParserContext, vector: List[float]) -> None:
         context.entries[-1].specular = \
-            np.array(vector, dtype=AmbientHandler.data_type())
+            np.array(vector, dtype=SpecularHandler.data_type())

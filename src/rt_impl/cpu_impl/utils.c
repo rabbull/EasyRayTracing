@@ -8,10 +8,6 @@
 
 #include <utils.h>
 
-bool_t eq(real_t p, real_t q) {
-    return real_abs(p - q) < real_esp;
-}
-
 real_t real_cos(real_t rad) {
 #ifdef DOUBLE_PRECISION
         return cos(rad);
@@ -30,6 +26,14 @@ real_t real_sin(real_t rad) {
 
 real_t real_abs(real_t v) {
     return (((v >= 0) << 1) - 1) * v;
+}
+
+real_t real_max(real_t p, real_t q) {
+    return p > q ? p : q;
+}
+
+real_t real_min(real_t p, real_t q) {
+    return p < q ? p : q;
 }
 
 real_t real_rand() {

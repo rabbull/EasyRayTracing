@@ -52,6 +52,8 @@ void vec3_axpy(real_t alpha, vec3_t PTRC x, vec3_t *y);
 
 void vec3_scale(vec3_t *v, real_t alpha);
 
+void vec3_normalize(vec3_t *v);
+
 void vec3_plus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q);
 
 void vec3_minus(vec3_t *dst, vec3_t PTRC p, vec3_t PTRC q);

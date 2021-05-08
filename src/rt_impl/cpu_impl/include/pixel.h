@@ -19,6 +19,8 @@ typedef union {
     };
 } pix_t;
 
+typedef pix_t color_t;
+
 void pix_print(pix_t const* pixel, char const* name);
 
 void pix_accumulate(pix_t PTRC *pixels, size_t n, pix_t *output);

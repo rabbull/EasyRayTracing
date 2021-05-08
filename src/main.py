@@ -2,11 +2,11 @@ import logging
 import time
 
 import numpy as np
-from rt_models import Camera, Canvas, Observer, Scene
-
 import rt_impl as rt
+from rt_models import Camera, Canvas, Observer, Scene
+from rt_models.scene import Light, Material
+
 from cli import parse_arguments
-from rt_models.scene import Material
 from wavefront import WaveFrontObjParser
 
 
@@ -23,9 +23,19 @@ def main():
     parser.parse(args.obj)
     data = parser.dump()['aggregated']
 
-    light_parser = WaveFrontObjParser()
-    light_parser.parse(args.light)
-    data['light_faces'] = light_parser.dump()['aggregated']['faces']
+    lights = []
+    for light_str in args.lights.split(';'):
+        splits = light_str.split(',')
+        origin_splits = splits[:3]
+        if len(splits) == 6:
+            color_splits = splits[3:]
+        else:
+            color_splits = ['255', '255', '255']
+        light = Light()
+        light.origin = np.array(origin_splits, dtype=np.float64)
+        light.color = np.array(color_splits, dtype=np.uint8)
+        lights.append(light)
+    data['lights'] = lights
 
     materials = data['materials']
     data['materials'] = []
@@ -38,6 +48,8 @@ def main():
         material.d_texture = None
         material.s_texture = None
         data['materials'].append(material)
+    print(data['mtl_indices'])
+    print(data['materials'])
     scene = Scene(**data)
 
     observer_origin = [float(e) for e in args.camera_origin.split(',')]
@@ -52,7 +64,7 @@ def main():
 
     camera = Camera(observer=observer, canvas=canvas, f=args.focal_length)
     t = time.time()
-    rt.observe("bvhmiddle", camera, scene)
+    rt.observe("naive", camera, scene)
     logging.info(f"Time elapsed: {time.time() - t}s")
     camera.capture().save(args.output)
 
